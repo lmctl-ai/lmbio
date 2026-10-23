@@ -69,6 +69,32 @@ void rejects(const std::string &text, const std::string &fragment) {
   }
   throw std::runtime_error("unsupported XML accepted");
 }
+void semantics_closed_forms(const Model &m, const char *what) {
+  // tests/fixtures/semantics.xml states the closed forms it encodes.
+  const Result r = m.simulate(0.0, 2.0, 5);
+  for (int row = 0; row < r.rows; ++row) {
+    const double t = r.value("time", row), e = std::exp(-t);
+    const struct {
+      const char *id;
+      double want;
+    } cases[] = {{"S1", 2 * e},
+                 {"S2", 1 - e},
+                 {"total", 2},
+                 {"B", 1 + t},
+                 {"P", (t + t * t / 2) / 4},
+                 {"E", 5},
+                 {"Q", 3 + t},
+                 {"X", 1.0 / 3 + 2.0 / 3 * std::exp(-3 * t)},
+                 {"Y", 2.0 / 3 - 2.0 / 3 * std::exp(-3 * t)}};
+    for (const auto &c : cases)
+      if (!(std::abs(r.value(c.id, row) - c.want) < 1e-6))
+        throw std::runtime_error(std::string(what) + ": " + c.id + " at t=" +
+                                 std::to_string(t) + " is " +
+                                 std::to_string(r.value(c.id, row)) +
+                                 ", expected " + std::to_string(c.want));
+    check(true, what);
+  }
+}
 } // namespace
 
 int main() {
@@ -116,6 +142,19 @@ int main() {
           "MathML arithmetic round trip changed simulation");
     std::remove(math_out);
 
+    Model semantics = load_sbml("tests/fixtures/semantics.xml");
+    semantics_closed_forms(semantics, "SBML semantics closed forms");
+    save_sbml(semantics, "build/lmbio-semantics-roundtrip.xml");
+    semantics_closed_forms(load_sbml("build/lmbio-semantics-roundtrip.xml"),
+                           "SBML semantics after round trip");
+    std::remove("build/lmbio-semantics-roundtrip.xml");
+    const std::string initial = "initialConcentration=\"1\" ";
+    auto no_initial = document("<ci>A</ci>");
+    no_initial.erase(no_initial.find(initial), initial.size());
+    rejects(no_initial, "no initial value");
+    auto no_size = document("<ci>A</ci>");
+    no_size.erase(no_size.find("size=\"1\" "), 9);
+    rejects(no_size, "has no size");
     Model prefixed = load_sbml("tests/fixtures/prefixed.xml");
     check(prefixed.name == "prefixed" && prefixed.reactions.size() == 1,
           "prefixed SBML was not loaded");
@@ -159,6 +198,17 @@ int main() {
                    restored.simulate(0, 1, 3).final("X")) < 1e-9,
           "source/reverse scientific notation roundtrip");
     std::remove("build/lmbio-source-roundtrip.xml");
+    Model starred;
+    starred.name = "starred";
+    starred.compartment("c", 1).species("A", "c", 2).reaction("r", "A ->",
+                                                              "0.5*A**2");
+    save_sbml(starred, "build/lmbio-starred-roundtrip.xml");
+    check(std::abs(load_sbml("build/lmbio-starred-roundtrip.xml")
+                       .simulate(0, 1, 3)
+                       .final("A") -
+                   1.0) < 1e-6,
+          "'**' power exports as MathML power (A = 2/(1+t))");
+    std::remove("build/lmbio-starred-roundtrip.xml");
     std::cout << checks << " SBML XML checks passed\n";
     return 0;
   } catch (const std::exception &e) {

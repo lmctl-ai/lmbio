@@ -111,7 +111,10 @@ void reject_attrs(const xml_node &n,
                   std::initializer_list<const char *> allowed) {
   for (auto a : n.attributes()) {
     const std::string k = a.name();
-    if (k == "xmlns" || k.rfind("xmlns:", 0) == 0)
+    // metaid and sboTerm are annotation hooks on every SBML element and carry
+    // no simulation semantics.
+    if (k == "xmlns" || k.rfind("xmlns:", 0) == 0 || k == "metaid" ||
+        k == "sboTerm")
       continue;
     bool ok = false;
     for (const char *x : allowed)
@@ -323,8 +326,11 @@ public:
       t_ = {Tok::rp, ")"};
     else if (c == ',')
       t_ = {Tok::comma, ","};
-    else if (c == '^')
+    else if (c == '^' || (c == '*' && p_ < s_.size() && s_[p_] == '*')) {
+      if (c == '*')
+        ++p_; // "**" is the expression compiler's alternative power operator
       t_ = {Tok::op, "^"};
+    }
     else
       t_ = {Tok::op, std::string(1, c)};
   }
@@ -530,7 +536,7 @@ std::string equation(const xml_node &r, bool reverse = false) {
   for (auto sr : r.children()) {
     if (local(sr) != "speciesReference")
       continue;
-    reject_attrs(sr, {"species", "stoichiometry", "constant"});
+    reject_attrs(sr, {"species", "name", "stoichiometry", "constant"});
     if (sr.attribute("constant") &&
         !yes(sr.attribute("constant").value(), true))
       bad("dynamic speciesReference stoichiometry is unsupported");
@@ -626,12 +632,17 @@ Model load_sbml(const std::string &path) {
         c, {"id", "name", "size", "constant", "spatialDimensions", "units"});
     if (c.attribute("constant") && !yes(c.attribute("constant").value(), true))
       bad("dynamic compartments are unsupported");
+    // Level 3 has no default compartment size; guessing 1 would silently
+    // rescale every concentration in the compartment.
+    const std::string id = attr_required(c, "id");
+    if (!c.attribute("size"))
+      bad("compartment '" + id + "' has no size");
     m.compartments.push_back(
-        {attr_required(c, "id"),
-         c.attribute("size")
-             ? number(c.attribute("size").value(), "compartment size")
-             : 1});
+        {id, number(c.attribute("size").value(), "compartment size")});
   }
+  // Values that Level 3 leaves undefined are only acceptable when an
+  // assignment rule defines them; checked once the rules are read.
+  std::vector<std::string> undefined;
   auto lp = child_local(md, "listOfParameters");
   for (auto p : lp.children()) {
     if (local(p) != "parameter") {
@@ -642,7 +653,12 @@ Model load_sbml(const std::string &path) {
     const std::string id = attr_required(p, "id");
     if (m.parameters.count(id))
       bad("duplicate parameter id: " + id);
-    m.parameters[id] = number(p.attribute("value").value(), "parameter value");
+    if (!p.attribute("value")) {
+      undefined.push_back(id);
+      m.parameters[id] = 0;
+    } else
+      m.parameters[id] =
+          number(p.attribute("value").value(), "parameter value");
   }
   auto ls = child_local(md, "listOfSpecies");
   for (auto s : ls.children()) {
@@ -667,6 +683,8 @@ Model load_sbml(const std::string &path) {
                : ic ? number(ic.value(), "initialConcentration")
                     : 0;
     x.initial = v;
+    if (!ia && !ic)
+      undefined.push_back(x.id);
     if (ia && !x.substance_only) {
       double vol = 1;
       for (auto &c : m.compartments)
@@ -691,7 +709,7 @@ Model load_sbml(const std::string &path) {
     }
     Reaction x;
     x.id = attr_required(r, "id");
-    reject_attrs(r, {"id", "name", "reversible", "fast"});
+    reject_attrs(r, {"id", "name", "reversible", "fast", "compartment"});
     if (yes(r.attribute("fast").value()))
       bad("fast reactions are unsupported");
     auto kl = child_local(r, "kineticLaw");
@@ -752,6 +770,15 @@ Model load_sbml(const std::string &path) {
     bad("constraints are unsupported");
   if (child_local(md, "listOfFunctionDefinitions"))
     bad("function definitions are unsupported");
+  for (const auto &id : undefined) {
+    bool assigned = false;
+    for (const auto &rule : m.rules)
+      if (rule.target == id && !rule.rate)
+        assigned = true;
+    if (!assigned)
+      bad("'" + id +
+          "' has no initial value (initial assignments are unsupported)");
+  }
   for (auto parameter : lp.children())
     if (yes(parameter.attribute("constant").as_string("true"), true))
       for (const auto &rule : m.rules)

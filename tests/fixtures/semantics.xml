@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Original lmbio fixture (MIT). Closed forms at time t, compartment c = 2:
+     S1 = 2 exp(-t), S2 = 1 - exp(-t), total = S1 + 2 S2 = 2   (2 S1 -> S2, local k shadows global)
+     B = 1 + t (boundary, rate rule), P = (t + t^2/2)/4         (B -> P leaves B unchanged)
+     Q amount = 3 + t (hasOnlySubstanceUnits, initialConcentration 1.5 in volume 2)
+     E = 5 (constant boundary modifier), X = 1/3 + (2/3) exp(-3t), Y = 1 - X (reversible net law) -->
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
+  <model metaid="_semantics" id="semantics" timeUnits="second">
+    <listOfCompartments>
+      <compartment id="c" size="2" spatialDimensions="3" constant="true" sboTerm="SBO:0000290"/>
+    </listOfCompartments>
+    <listOfSpecies>
+      <species id="S1" compartment="c" initialAmount="4" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="S2" compartment="c" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="B" compartment="c" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="true" constant="false"/>
+      <species id="P" compartment="c" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="E" compartment="c" initialConcentration="5" hasOnlySubstanceUnits="false" boundaryCondition="true" constant="true"/>
+      <species id="Q" compartment="c" initialConcentration="1.5" hasOnlySubstanceUnits="true" boundaryCondition="false" constant="false"/>
+      <species id="X" compartment="c" initialConcentration="1" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+      <species id="Y" compartment="c" initialConcentration="0" hasOnlySubstanceUnits="false" boundaryCondition="false" constant="false"/>
+    </listOfSpecies>
+    <listOfParameters>
+      <parameter id="k" value="100" constant="true"/>
+      <parameter id="kb" value="0.25" constant="true"/>
+      <parameter id="kq" value="0.1" constant="true"/>
+      <parameter id="kf" value="2" constant="true"/>
+      <parameter id="kr" value="1" constant="true"/>
+      <parameter id="total" constant="false"/>
+    </listOfParameters>
+    <listOfRules>
+      <assignmentRule variable="total"><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><plus/><ci>S1</ci><apply><times/><cn type="integer">2</cn><ci>S2</ci></apply></apply></math></assignmentRule>
+      <rateRule variable="B"><math xmlns="http://www.w3.org/1998/Math/MathML"><cn>1</cn></math></rateRule>
+    </listOfRules>
+    <listOfReactions>
+      <reaction id="r1" reversible="false" fast="false">
+        <listOfReactants><speciesReference species="S1" stoichiometry="2" constant="true"/></listOfReactants>
+        <listOfProducts><speciesReference species="S2" stoichiometry="1" constant="true"/></listOfProducts>
+        <kineticLaw>
+          <math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>c</ci><ci>k</ci><ci>S1</ci></apply></math>
+          <listOfLocalParameters><localParameter id="k" value="0.5"/></listOfLocalParameters>
+        </kineticLaw>
+      </reaction>
+      <reaction id="r2" reversible="false" fast="false">
+        <listOfReactants><speciesReference species="B" stoichiometry="1" constant="true"/></listOfReactants>
+        <listOfProducts><speciesReference species="P" stoichiometry="1" constant="true"/></listOfProducts>
+        <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>c</ci><ci>kb</ci><ci>B</ci></apply></math></kineticLaw>
+      </reaction>
+      <reaction id="r3" reversible="false" fast="false">
+        <listOfProducts><speciesReference species="Q" stoichiometry="1" constant="true"/></listOfProducts>
+        <listOfModifiers><modifierSpeciesReference species="E"/></listOfModifiers>
+        <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>kq</ci><ci>E</ci><ci>c</ci></apply></math></kineticLaw>
+      </reaction>
+      <reaction id="r4" reversible="true" fast="false">
+        <listOfReactants><speciesReference species="X" stoichiometry="1" constant="true"/></listOfReactants>
+        <listOfProducts><speciesReference species="Y" stoichiometry="1" constant="true"/></listOfProducts>
+        <kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>c</ci><apply><minus/><apply><times/><ci>kf</ci><ci>X</ci></apply><apply><times/><ci>kr</ci><ci>Y</ci></apply></apply></apply></math></kineticLaw>
+      </reaction>
+    </listOfReactions>
+  </model>
+</sbml>
