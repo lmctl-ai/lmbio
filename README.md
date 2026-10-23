@@ -2,6 +2,10 @@
 
 Gene circuits, enzymes, drugs, epidemics and molecular noise as reaction networks: stiff ODEs with CVODE, steady states with KINSOL, Gillespie SSA, SBML in and out, drawn with lmplot and lmdraw.
 
+[![CI](https://github.com/lmctl-ai/lmbio/actions/workflows/ci.yml/badge.svg)](https://github.com/lmctl-ai/lmbio/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/lmctl-ai/lmbio?label=release)](https://github.com/lmctl-ai/lmbio/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ### Gene circuits and noise
 
 | Toggle switch: two memories | Repressilator: a ring that keeps time | Self-repression speeds response |
@@ -132,8 +136,6 @@ examples/render-all.sh   # regenerate docs/images (network for lmplot/lmdraw; ff
 Requires CMake 3.24+, C++17, git, Python 3, and lmscript for tests (`npm i -g @lmctl-ai/lmctl@0.2.369` or later). Linux releases are fully static; macOS uses only system libraries; Windows statically links MinGW runtimes. No external runtime data is required.
 
 `test.sh` builds the host, runs the native regression tests (first-order decay, reversible equilibrium, mass-action enzyme conservation, Lotka-Volterra invariants, Robertson stiff kinetics, finite-difference sensitivities, stochastic Poisson moments, SBML round trips, mass-action propensities, dosing restarts), runs every example with its own known-answer assertions, checks that result files are byte-identical on rerun, and checks schema/registry/compiler parity, dependency pins, static linking, error codes and the gallery (sources, PNG/GIF signatures, sizes). All fixtures are original MIT-licensed test data.
-
-[![CI](https://github.com/lmctl-ai/lmbio/actions/workflows/ci.yml/badge.svg)](https://github.com/lmctl-ai/lmbio/actions/workflows/ci.yml)
 
 ## Resource limits
 
