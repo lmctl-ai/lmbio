@@ -4,3 +4,5 @@ dist/
 .ci-bin/
 *.dslb
 __pycache__/
+
+/images/

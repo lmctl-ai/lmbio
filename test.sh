@@ -63,10 +63,8 @@ case "$UNAME_S" in
 esac
 
 # Programs: compile every test and example, run them (they assert their own numbers).
-if ! command -v lmplot >/dev/null 2>&1 && [ "${VISUALS_NETWORK:-0}" != 1 ]; then
-  echo "SKIP image regeneration: lmplot unavailable; committed gallery images are still validated"
-fi
-mkdir -p build/examples
+mkdir -p build/examples images
+rm -f images/*.png
 n=0
 for src in tests/*.lms examples/*.lms; do
   name="$(basename "$src" .lms)"
@@ -145,7 +143,7 @@ set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 2 ] || fail "usage exit code $code, expected 2"
 ok "usage and load errors use exit codes 2 and 3"
 
-python3 scripts/check-gallery.py
+python3 scripts/check-gallery.py --generated
 ok "gallery links, image signatures, dimensions and byte budgets"
 
 echo "all $pass checks passed"

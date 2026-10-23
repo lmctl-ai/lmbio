@@ -6,7 +6,30 @@ bio.assert_true(r.final("X") >= 0.0);
 r.save_csv("build/examples/stochastic.csv");
 end _dsl_
 savedsl(p, "build/stochastic.dslb");
-system ${dsl_cli(p)} --dsl build/stochastic.dslb;
-r = system bash examples/render-one.sh stochastic;
-println(r.stdout);
-assert(r.code == 0);
+r = system ${dsl_cli(p)} --dsl build/stochastic.dslb;
+if (r.code!=0) { println(r.stdout); println(r.stderr); }
+assert(r.code==0);
+
+mkdir("build/visual");
+mkdir("images");
+v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/stochastic.png",900,520);
+plot.cmd("set datafile separator ','");
+plot.cmd("set border 3");
+plot.cmd("set tics nomirror");
+plot.cmd("set grid back lc rgb '#e4e9ef'");
+plot.cmd("set key outside top center horizontal");
+plot.cmd("set style line 1 lc rgb '#007f86' lw 3");
+plot.cmd("set style line 2 lc rgb '#df6b38' lw 3");
+plot.cmd("set style line 3 lc rgb '#5864a8' lw 3");
+plot.cmd("set title 'Immigration and loss: one seeded molecular trajectory'");
+plot.cmd("set xlabel 'Time (model units)'");
+plot.cmd("set ylabel 'Molecule count'");
+plot.cmd("plot 'build/examples/stochastic.csv' using 1:2 with steps ls 1 title 'Seed 424242', 3 with lines ls 2 dt 2 title 'Equilibrium mean'");
+plot.close();
+end _dsl_
+savedsl(v,"build/visual/stochastic.dslb");
+r = system ${dsl_cli(v)} --dsl build/visual/stochastic.dslb;
+assert(r.code==0);
+
+println("wrote images/stochastic.png");
