@@ -1,7 +1,7 @@
 mkdir("build/examples");
 p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m=bio.model("balance").compartment("v",1.0).species("A","v",1.0).species("B","v",0.0).reaction("f","A -> B","2*A").reversible("f","B");
-let r=m.simulate(0.0,4.0,101);bio.assert_close(r.final("B"),0.6666666667,0.00001);r.save_csv("build/examples/reversible_balance.csv");
+let r=m.simulate(0.0,4.0,401);bio.assert_close(r.final("B"),0.6666666667,0.00001);r.save_csv("build/examples/reversible_balance.csv");
 end _dsl_
 savedsl(p, "build/reversible_balance.dslb");
 r = system ${dsl_cli(p)} --dsl build/reversible_balance.dslb;
@@ -15,7 +15,7 @@ plot.cmd("set datafile separator ','");
 plot.cmd("set border 3");
 plot.cmd("set tics nomirror");
 plot.cmd("set grid back lc rgb '#e4e9ef'");
-plot.cmd("set key outside top center horizontal");
+plot.cmd("set key center right Right noreverse samplen 2");
 plot.cmd("set style line 1 lc rgb '#007f86' lw 3");
 plot.cmd("set style line 2 lc rgb '#df6b38' lw 3");
 plot.cmd("set style line 3 lc rgb '#5864a8' lw 3");

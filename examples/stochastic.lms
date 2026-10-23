@@ -18,13 +18,14 @@ plot.cmd("set datafile separator ','");
 plot.cmd("set border 3");
 plot.cmd("set tics nomirror");
 plot.cmd("set grid back lc rgb '#e4e9ef'");
-plot.cmd("set key outside top center horizontal");
+plot.cmd("set key top right Right noreverse samplen 2");
 plot.cmd("set style line 1 lc rgb '#007f86' lw 3");
 plot.cmd("set style line 2 lc rgb '#df6b38' lw 3");
 plot.cmd("set style line 3 lc rgb '#5864a8' lw 3");
 plot.cmd("set title 'Immigration and loss: one seeded molecular trajectory'");
 plot.cmd("set xlabel 'Time (model units)'");
 plot.cmd("set ylabel 'Molecule count'");
+plot.cmd("set yrange [0:9]");
 plot.cmd("plot 'build/examples/stochastic.csv' using 1:2 with steps ls 1 title 'Seed 424242', 3 with lines ls 2 dt 2 title 'Equilibrium mean'");
 plot.close();
 end _dsl_

@@ -15,7 +15,7 @@ plot.cmd("set datafile separator ','");
 plot.cmd("set border 3");
 plot.cmd("set tics nomirror");
 plot.cmd("set grid back lc rgb '#e4e9ef'");
-plot.cmd("set key outside top center horizontal");
+plot.cmd("set key top right Right noreverse samplen 2");
 plot.cmd("set style line 1 lc rgb '#007f86' lw 3");
 plot.cmd("set style line 2 lc rgb '#df6b38' lw 3");
 plot.cmd("set style line 3 lc rgb '#5864a8' lw 3");
@@ -38,3 +38,10 @@ r = system ${dsl_cli(v)} --dsl build/visual/decay_clock.dslb;
 assert(r.code==0);
 
 println("wrote images/decay_clock.png");
+if (which("ffmpeg") != null) {
+  r = system ffmpeg -y -loglevel error -framerate 8 -i build/visual/decay_clock-frame-%d.png -vf "scale=600:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=64[p];[b][p]paletteuse=dither=none" -loop 0 images/decay_clock.gif;
+  assert(r.code == 0);
+  println("wrote images/decay_clock.gif");
+} else {
+  println("SKIP images/decay_clock.gif: ffmpeg is not on PATH (frames are in build/visual/)");
+}

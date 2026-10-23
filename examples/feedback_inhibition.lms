@@ -1,0 +1,128 @@
+# Feedback inhibition re-routes a metabolic pathway. Supply enters as A at v0/(1 + P1/Ki); A splits
+# into a branch to end product P1 (via B) and a side branch to P2. When the cell stops using P1
+# (demand d1 drops from 1 to 0.1), P1 piles up, shuts the entry valve, and the whole pathway slows.
+# Steady state has a closed form: (k1 + k3) A (1 + c A) = v0 with c = k1/(d1 Ki), a quadratic.
+# lmbio finds the steady state numerically and checks it; lmdraw draws both flux maps, arrow
+# width proportional to flux.
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("branch").compartment("cell", 1.0);
+m.species("A", "cell", 0.0).species("B", "cell", 0.0).species("P1", "cell", 0.0).species("P2", "cell", 0.0);
+m.param("v0", 10.0).param("Ki", 1.0).param("k1", 1.0).param("k2", 2.0).param("k3", 0.5).param("d1", 1.0).param("d2", 1.0);
+m.reaction("supply", " -> A", "v0/(1 + P1/Ki)").reaction("step1", "A -> B", "k1*A").reaction("step2", "B -> P1", "k2*B");
+m.reaction("side", "A -> P2", "k3*A").reaction("use_P1", "P1 ->", "d1*P1").reaction("use_P2", "P2 ->", "d2*P2");
+m.tol(0.0000000001, 0.000000000001);
+for (k in range(0, 2)) {
+  let d1 = 1.0;
+  if (k == 1) { d1 = 0.1; }
+  m.set("d1", d1);
+  let s = m.steady_state();
+  let c = 1.0 / d1;
+  let a = (-1.0 + sqrt(1.0 + 4.0 * c * 10.0 / 1.5)) / (2.0 * c);
+  bio.assert_close(s.final("A"), a, 0.000001);
+  let j1 = s.final("A");
+  let j2 = 0.5 * s.final("A");
+  let j0 = 10.0 / (1.0 + s.final("P1"));
+  bio.assert_close(j0, j1 + j2, 0.000001);
+  bio.assert_close(d1 * s.final("P1"), j1, 0.000001);
+  bio.print("flux," + str(k) + "," + str(j0) + "," + str(j1) + "," + str(j2) + "," + str(s.final("A")) + "," + str(s.final("B")) + "," + str(s.final("P1")) + "," + str(s.final("P2")));
+}
+end _dsl_
+savedsl(p, "build/feedback_inhibition.dslb");
+r = system ${dsl_cli(p)} --dsl build/feedback_inhibition.dslb;
+assert(r.code == 0);
+J0 = [0.0, 0.0];
+J1 = [0.0, 0.0];
+J2 = [0.0, 0.0];
+CA = ["", ""];
+CB = ["", ""];
+CP1 = ["", ""];
+CP2 = ["", ""];
+fn T(x) { return str(round(x * 100) / 100); }
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "flux,")) {
+    f = split(line, ",");
+    k = num(f[1]);
+    J0[k] = num(f[2]);
+    J1[k] = num(f[3]);
+    J2[k] = num(f[4]);
+    CA[k] = T(num(f[5]));
+    CB[k] = T(num(f[6]));
+    CP1[k] = T(num(f[7]));
+    CP2[k] = T(num(f[8]));
+  }
+}
+# arrow stroke widths: 2 px per unit flux (+1.5), and their labels
+fn W(j) { return floor(2.0 * j) + 1.5; }
+w0a = W(J0[0]); w1a = W(J1[0]); w2a = W(J2[0]);
+w0b = W(J0[1]); w1b = W(J1[1]); w2b = W(J2[1]);
+l0a = "supply " + T(J0[0]); l1a = T(J1[0]); l2a = T(J2[0]);
+l0b = "supply " + T(J0[1]); l1b = T(J1[1]); l2b = T(J2[1]);
+ratio = T(J0[0] / J0[1]);
+foot = "Supply drops " + ratio + "x when P1 is no longer used: the cell stops making what it does not need, and the side product P2 falls with it.";
+
+mkdir("images");
+mkdir("build/rendered");
+d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(960, 540, "#ffffff");
+scene.text(36.0, 48.0, 24.0, "Feedback inhibition: a pathway makes only what is used", "#1d2733").set_attr("font-weight", "700");
+scene.text(36.0, 76.0, 15.0, "Steady-state flux maps from lmbio; arrow width is proportional to flux, node labels are concentrations.", "#5a6672");
+for (panel in range(0, 2)) {
+  let ox = 30.0;
+  let heading = "P1 in demand (d1 = 1)";
+  let w0 = ${w0a}; let w1 = ${w1a}; let w2 = ${w2a};
+  let l0 = ${l0a}; let l1 = ${l1a}; let l2 = ${l2a};
+  let ca = ${CA[0]}; let cb = ${CB[0]}; let cp1 = ${CP1[0]}; let cp2 = ${CP2[0]};
+  if (panel == 1) {
+    ox = 490.0;
+    heading = "P1 no longer used (d1 = 0.1)";
+    w0 = ${w0b}; w1 = ${w1b}; w2 = ${w2b};
+    l0 = ${l0b}; l1 = ${l1b}; l2 = ${l2b};
+    ca = ${CA[1]}; cb = ${CB[1]}; cp1 = ${CP1[1]}; cp2 = ${CP2[1]};
+  }
+  let card = scene.rect(ox, 100.0, 440.0, 372.0, "#f7f9fb");
+  card.set_attr("stroke", "#dde3e9"); card.set_attr("rx", "12");
+  scene.text(ox + 220.0, 128.0, 17.0, heading, "#1d2733").set_attr("text-anchor", "middle");
+  # supply arrow into A, then A -> B -> P1 (top row) and A -> P2 (bottom row), then use arrows
+  scene.arrow(ox + 20.0, 290.0, ox + 92.0, 290.0, "#007f86", w0);
+  scene.text(ox + 20.0, 322.0, 13.0, l0, "#00545a");
+  scene.arrow(ox + 140.0, 272.0, ox + 200.0, 222.0, "#007f86", w1);
+  scene.arrow(ox + 262.0, 200.0, ox + 312.0, 200.0, "#007f86", w1);
+  scene.arrow(ox + 140.0, 308.0, ox + 200.0, 358.0, "#df6b38", w2);
+  scene.arrow(ox + 362.0, 200.0, ox + 420.0, 200.0, "#007f86", w1);
+  scene.arrow(ox + 262.0, 380.0, ox + 330.0, 380.0, "#df6b38", w2);
+  scene.text(ox + 156.0, 228.0, 13.0, l1, "#00545a").set_attr("text-anchor", "end");
+  scene.text(ox + 156.0, 362.0, 13.0, l2, "#b4532a").set_attr("text-anchor", "end");
+  scene.text(ox + 392.0, 186.0, 13.0, "used", "#00545a").set_attr("text-anchor", "middle");
+  scene.text(ox + 296.0, 366.0, 13.0, "used", "#b4532a").set_attr("text-anchor", "middle");
+  # inhibition: P1 back to the supply valve, dashed, with a T-bar
+  let inh = scene.path("M " + str(ox + 337.0) + " 172 C " + str(ox + 337.0) + " 140 " + str(ox + 56.0) + " 150 " + str(ox + 56.0) + " 268", "none", "#5864a8", 2.5);
+  inh.set_attr("stroke-dasharray", "7 5");
+  scene.line(ox + 44.0, 270.0, ox + 68.0, 270.0, "#5864a8", 4.0);
+  scene.text(ox + 200.0, 150.0, 13.0, "P1 inhibits supply", "#5864a8").set_attr("text-anchor", "middle");
+  # nodes
+  let na = scene.circle(ox + 118.0, 290.0, 26.0, "#ffffff");
+  na.set_attr("stroke", "#1d2733"); na.set_attr("stroke-width", "2");
+  let nb = scene.circle(ox + 236.0, 200.0, 26.0, "#ffffff");
+  nb.set_attr("stroke", "#1d2733"); nb.set_attr("stroke-width", "2");
+  let np1 = scene.circle(ox + 337.0, 200.0, 26.0, "#e3f2f2");
+  np1.set_attr("stroke", "#007f86"); np1.set_attr("stroke-width", "2.5");
+  let np2 = scene.circle(ox + 236.0, 380.0, 26.0, "#fbe9e0");
+  np2.set_attr("stroke", "#df6b38"); np2.set_attr("stroke-width", "2.5");
+  scene.text(ox + 118.0, 296.0, 16.0, "A", "#1d2733").set_attr("text-anchor", "middle");
+  scene.text(ox + 236.0, 206.0, 16.0, "B", "#1d2733").set_attr("text-anchor", "middle");
+  scene.text(ox + 337.0, 206.0, 16.0, "P1", "#1d2733").set_attr("text-anchor", "middle");
+  scene.text(ox + 236.0, 386.0, 16.0, "P2", "#1d2733").set_attr("text-anchor", "middle");
+  scene.text(ox + 118.0, 334.0, 13.0, "[A] " + ca, "#5a6672").set_attr("text-anchor", "middle");
+  scene.text(ox + 236.0, 244.0, 13.0, "[B] " + cb, "#5a6672").set_attr("text-anchor", "middle");
+  scene.text(ox + 337.0, 244.0, 13.0, "[P1] " + cp1, "#5a6672").set_attr("text-anchor", "middle");
+  scene.text(ox + 236.0, 424.0, 13.0, "[P2] " + cp2, "#5a6672").set_attr("text-anchor", "middle");
+}
+scene.text(36.0, 506.0, 14.0, ${foot}, "#1d2733", 890.0);
+scene.render_png("build/rendered/feedback_inhibition.png", 960, 540, 1);
+end _dsl_
+savedsl(d, "build/feedback_inhibition-draw.dslb");
+r = system ${dsl_cli(d)} --dsl build/feedback_inhibition-draw.dslb;
+assert(r.code == 0);
+copy_file("build/rendered/feedback_inhibition.png", "images/feedback_inhibition.png");
+println("wrote images/feedback_inhibition.png");

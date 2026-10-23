@@ -15,13 +15,14 @@ plot.cmd("set datafile separator ','");
 plot.cmd("set border 3");
 plot.cmd("set tics nomirror");
 plot.cmd("set grid back lc rgb '#e4e9ef'");
-plot.cmd("set key outside top center horizontal");
+plot.cmd("set key bottom right Right noreverse samplen 2");
 plot.cmd("set style line 1 lc rgb '#007f86' lw 3");
 plot.cmd("set style line 2 lc rgb '#df6b38' lw 3");
 plot.cmd("set style line 3 lc rgb '#5864a8' lw 3");
 plot.cmd("set title 'Logistic growth: crowding creates a carrying capacity'");
 plot.cmd("set xlabel 'Time (model units)'");
 plot.cmd("set ylabel 'Population (model units)'");
+plot.cmd("set xrange [0:15]");
 plot.cmd("plot 'build/examples/logistic_limit.csv' using 1:2 with lines ls 1 title 'Population', 100 with lines ls 2 dt 2 title 'Carrying capacity'");
 plot.close();
 end _dsl_

@@ -1,0 +1,193 @@
+# The repressilator (Elowitz and Leibler 2000): three repressors in a ring, lacI -| tetR -| cI -| lacI.
+# With cooperative repression (Hill n = 2) the ring never settles: it oscillates with a period of
+# about 8.7 mRNA lifetimes, each protein a third of a cycle behind the one that represses it.
+# With n = 1 the same ring damps to a steady state. lmbio integrates both; lmdraw animates the ring.
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("repressilator").compartment("cell", 1.0);
+m.species("m1", "cell", 1.0).species("m2", "cell", 0.0).species("m3", "cell", 0.0);
+m.species("p1", "cell", 0.0).species("p2", "cell", 0.0).species("p3", "cell", 0.0);
+m.param("alpha", 216.0).param("alpha0", 0.216).param("beta", 5.0).param("n", 2.0);
+m.reaction("tx1", " -> m1", "alpha/(1 + p3^n) + alpha0").reaction("decay_m1", "m1 ->", "m1");
+m.reaction("tx2", " -> m2", "alpha/(1 + p1^n) + alpha0").reaction("decay_m2", "m2 ->", "m2");
+m.reaction("tx3", " -> m3", "alpha/(1 + p2^n) + alpha0").reaction("decay_m3", "m3 ->", "m3");
+m.reaction("tl1", " -> p1", "beta*m1").reaction("decay_p1", "p1 ->", "beta*p1");
+m.reaction("tl2", " -> p2", "beta*m2").reaction("decay_p2", "p2 ->", "beta*p2");
+m.reaction("tl3", " -> p3", "beta*m3").reaction("decay_p3", "p3 ->", "beta*p3");
+m.tol(0.0000000001, 0.000000000001);
+let r = m.simulate(0.0, 80.0, 1601);
+r.save_csv("build/examples/repressilator.csv");
+# period from upward crossings of the mid level over the second half of the run
+let top = 0.0;
+let bottom = 1000.0;
+for (i in range(800, 1601)) {
+  top = max(top, r.value("p1", i));
+  bottom = min(bottom, r.value("p1", i));
+}
+let level = 0.5 * (top + bottom);
+let first = -1.0;
+let last = -1.0;
+let cycles = 0;
+for (i in range(801, 1601)) {
+  let a = r.value("p1", i - 1);
+  let b = r.value("p1", i);
+  if (a < level && b >= level) {
+    let t = r.value("time", i - 1) + 0.05 * (level - a) / (b - a);
+    if (first < 0.0) { first = t; } else { cycles = cycles + 1; }
+    last = t;
+  }
+}
+let period = (last - first) / float(cycles);
+bio.assert_true(cycles >= 3);
+bio.assert_close(period, 8.7, 0.15);
+bio.assert_true(top - bottom > 50.0 && top < 60.0);
+# the same ring without cooperativity settles down
+m.set("n", 1.0);
+let flat = m.simulate(0.0, 80.0, 1601);
+let spread = 0.0;
+for (i in range(1200, 1601)) {
+  spread = max(spread, abs(flat.value("p1", i) - flat.final("p1")));
+}
+bio.assert_true(spread < 0.01);
+bio.print("period," + str(period) + "," + str(first) + "," + str(top) + "," + str(flat.final("p1")));
+end _dsl_
+savedsl(p, "build/repressilator.dslb");
+r = system ${dsl_cli(p)} --dsl build/repressilator.dslb;
+assert(r.code == 0);
+period = 0.0;
+t_start = 0.0;
+top = 0.0;
+flat = 0.0;
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "period,")) {
+    parts = split(line, ",");
+    period = num(parts[1]);
+    t_start = num(parts[2]);
+    top = num(parts[3]);
+    flat = num(parts[4]);
+  }
+}
+rows = csv_parse(read_file("build/examples/repressilator.csv"));
+
+# layout (pixels). DSL coordinates must be floats: F keeps every interpolated value non-integral.
+fn F(x) { return floor(x) + 0.5; }
+fn R1(x) { return round(x * 10) / 10; }
+ax_x = 492.0;
+ax_y = 124.0;
+ax_w = 420.0;
+ax_h = 320.0;
+ymax = 60.0;
+span = 3.0 * period;
+fn PX(t) { return ax_x + (t - t_start) / span * ax_w; }
+fn PY(v) { return ax_y + ax_h - v / ymax * ax_h; }
+names = ["p1", "p2", "p3"];
+curves = ["", "", ""];
+i0 = round(t_start / 0.05);
+i1 = round((t_start + span) / 0.05);
+for (j in range(0, 3)) {
+  d = "";
+  for (i in range(i0, i1 + 1)) {
+    d = d + (i == i0 ? "M " : " L ") + str(R1(PX(num(rows[i]["time"])))) + " " + str(R1(PY(num(rows[i][names[j]]))));
+  }
+  curves[j] = d;
+}
+# ring: three nodes on a triangle, curved repression arcs bulging outward, T-bars at the target
+cx = [232.0, 335.9, 128.1];
+cy = [196.0, 376.0, 376.0];
+mx = 232.0;
+my = 316.0;
+radius = 46.0;
+arcs = ["", "", ""];
+bars = ["", "", ""];
+for (j in range(0, 3)) {
+  k = (j + 1) % 3;
+  ex = (cx[j] + cx[k]) / 2.0;
+  ey = (cy[j] + cy[k]) / 2.0;
+  ox = ex - mx;
+  oy = ey - my;
+  ol = sqrt(ox * ox + oy * oy);
+  qx = ex + ox / ol * 46.0;
+  qy = ey + oy / ol * 46.0;
+  # start and end points on the circles, pointing toward the control point
+  sx = cx[j] + (qx - cx[j]) / sqrt(pow(qx - cx[j], 2) + pow(qy - cy[j], 2)) * (radius + 6.0);
+  sy = cy[j] + (qy - cy[j]) / sqrt(pow(qx - cx[j], 2) + pow(qy - cy[j], 2)) * (radius + 6.0);
+  tl = sqrt(pow(qx - cx[k], 2) + pow(qy - cy[k], 2));
+  fx = cx[k] + (qx - cx[k]) / tl * (radius + 8.0);
+  fy = cy[k] + (qy - cy[k]) / tl * (radius + 8.0);
+  arcs[j] = "M " + str(R1(sx)) + " " + str(R1(sy)) + " Q " + str(R1(qx)) + " " + str(R1(qy)) + " " + str(R1(fx)) + " " + str(R1(fy));
+  nx = -(qy - cy[k]) / tl;
+  ny = (qx - cx[k]) / tl;
+  bars[j] = "M " + str(R1(fx + nx * 13.0)) + " " + str(R1(fy + ny * 13.0)) + " L " + str(R1(fx - nx * 13.0)) + " " + str(R1(fy - ny * 13.0));
+}
+period_text = "Period " + str(round(period * 100.0) / 100.0) + " mRNA lifetimes; each protein lags its repressor by a third of a cycle";
+flat_text = "Same ring with Hill n = 1: settles at p = " + str(round(flat * 100.0) / 100.0) + " (no oscillation)";
+
+mkdir("images");
+mkdir("build/rendered");
+frames = 60;
+for (f in range(0, frames)) {
+  t = t_start + span * f / frames;
+  i = round(t / 0.05);
+  v1 = num(rows[i]["p1"]);
+  v2 = num(rows[i]["p2"]);
+  v3 = num(rows[i]["p3"]);
+  o1 = str(R1(0.12 + 0.88 * min(1.0, v1 / top)));
+  o2 = str(R1(0.12 + 0.88 * min(1.0, v2 / top)));
+  o3 = str(R1(0.12 + 0.88 * min(1.0, v3 / top)));
+  out = "build/rendered/repressilator-frame-" + str(f) + ".png";
+  d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(960, 540, "#ffffff");
+scene.text(36.0, 48.0, 24.0, "The repressilator: a ring of three repressors keeps time", "#1d2733").set_attr("font-weight", "700");
+scene.text(36.0, 76.0, 15.0, ${period_text}, "#5a6672");
+let ring = scene.circle(232.0, 316.0, 150.0, "none");
+ring.set_attr("stroke", "#eef1f4");
+ring.set_attr("stroke-width", "1.5");
+scene.path(${arcs[0]}, "none", "#007f86", 3.0);
+scene.path(${bars[0]}, "none", "#007f86", 4.0);
+scene.path(${arcs[1]}, "none", "#df6b38", 3.0);
+scene.path(${bars[1]}, "none", "#df6b38", 4.0);
+scene.path(${arcs[2]}, "none", "#5864a8", 3.0);
+scene.path(${bars[2]}, "none", "#5864a8", 4.0);
+let n1 = scene.circle(232.0, 196.0, 46.0, "#007f86");
+n1.set_attr("fill-opacity", ${o1});
+n1.set_attr("stroke", "#007f86");
+n1.set_attr("stroke-width", "2.5");
+let n2 = scene.circle(335.9, 376.0, 46.0, "#df6b38");
+n2.set_attr("fill-opacity", ${o2});
+n2.set_attr("stroke", "#df6b38");
+n2.set_attr("stroke-width", "2.5");
+let n3 = scene.circle(128.1, 376.0, 46.0, "#5864a8");
+n3.set_attr("fill-opacity", ${o3});
+n3.set_attr("stroke", "#5864a8");
+n3.set_attr("stroke-width", "2.5");
+scene.text(232.0, 202.0, 17.0, "lacI", "#1d2733").set_attr("text-anchor", "middle");
+scene.text(335.9, 382.0, 17.0, "tetR", "#1d2733").set_attr("text-anchor", "middle");
+scene.text(128.1, 382.0, 17.0, "cI", "#1d2733").set_attr("text-anchor", "middle");
+scene.text(232.0, 470.0, 13.0, "node shade = current protein level", "#5a6672").set_attr("text-anchor", "middle");
+scene.text(36.0, 512.0, 13.0, ${flat_text}, "#5a6672");
+scene.axes(${F(ax_x)}, ${F(ax_y)}, ${F(ax_w)}, ${F(ax_h)}, 0.0, 3.0, 0.0, 60.0, 6, "#5a6672");
+scene.text(${F(ax_x + ax_w / 2.0)}, ${F(ax_y + ax_h + 46.0)}, 14.0, "Time (periods)", "#1d2733").set_attr("text-anchor", "middle");
+scene.text(${F(ax_x - 40.0)}, ${F(ax_y - 16.0)}, 14.0, "Protein level", "#1d2733");
+scene.path(${curves[0]}, "none", "#007f86", 2.5);
+scene.path(${curves[1]}, "none", "#df6b38", 2.5);
+scene.path(${curves[2]}, "none", "#5864a8", 2.5);
+let cursor = scene.line(${F(PX(t))}, ${F(ax_y)}, ${F(PX(t))}, ${F(ax_y + ax_h)}, "#1d2733", 1.5);
+cursor.set_attr("stroke-dasharray", "4 4");
+scene.circle(${F(PX(t))}, ${F(PY(v1))}, 6.0, "#007f86");
+scene.circle(${F(PX(t))}, ${F(PY(v2))}, 6.0, "#df6b38");
+scene.circle(${F(PX(t))}, ${F(PY(v3))}, 6.0, "#5864a8");
+scene.render_png(${out}, 960, 540, 1);
+end _dsl_
+  savedsl(d, "build/repressilator-draw.dslb");
+  r = system ${dsl_cli(d)} --dsl build/repressilator-draw.dslb;
+  assert(r.code == 0);
+}
+copy_file("build/rendered/repressilator-frame-0.png", "images/repressilator.png");
+println("wrote images/repressilator.png");
+if (which("ffmpeg") != null) {
+  r = system ffmpeg -y -loglevel error -framerate 15 -i build/rendered/repressilator-frame-%d.png -vf "scale=640:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=64[p];[b][p]paletteuse=dither=none" images/repressilator.gif;
+  assert(r.code == 0);
+  println("wrote images/repressilator.gif");
+} else {
+  println("SKIP images/repressilator.gif: ffmpeg is not on PATH (frames are in build/rendered/)");
+}

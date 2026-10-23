@@ -5,7 +5,7 @@ r=pathlib.Path(__file__).resolve().parent.parent
 s=(r/'README.md').read_text()
 prefix="https://raw.githubusercontent.com/lmctl-ai/"+r.name+"/main/examples/"
 urls=re.findall(r'lmctl autorun (https://raw\.githubusercontent\.com/[^\s`|<>]+\.lms)',s)
-assert len(urls)>=14, "Every gallery card and example listing needs an autorun command"
+assert len(set(urls))>=12, "Every gallery card and example listing needs an autorun command"
 assert not re.search(r'\]\(examples/[^)]+\.lms\)',s), "Use autorun commands instead of relative source links"
 for url in urls:
  assert url.startswith(prefix),url
@@ -14,7 +14,9 @@ for path in re.findall(r'\]\((docs/images/[^)]+)\)',s):
  assert (r/path).is_file(), f"Missing image {path}"
 for p in (r/'examples').glob('*.lms'):
  text=p.read_text()
- assert 'cli="lmplot" install="github:lmctl-ai/lmplot@latest"' in text,p
+ assert ('cli="lmplot" install="github:lmctl-ai/lmplot@latest"' in text or
+         'cli="lmdraw" install="github:lmctl-ai/lmdraw@latest"' in text),p
+ assert 'cli="lmbio" install="github:lmctl-ai/lmbio@latest"' in text,p
  assert 'examples/render-' not in text and 'examples/visuals' not in text,p
  assert 'images/'+p.stem+'.png' in text,p
  assert (r/'docs/images'/(p.stem+'.png')).is_file(),p
@@ -22,8 +24,12 @@ for p in (r/'examples').glob('*.lms'):
  if '--generated' in sys.argv:
   output=r/'images'/(p.stem+'.png')
   assert output.is_file() and output.read_bytes()[:8]==b'\x89PNG\r\n\x1a\n',output
+for path in re.findall(r'\]\((docs/images/[^)]+\.gif)\)',s):
+ stem=pathlib.Path(path).stem
+ src=(r/'examples'/(stem+'.lms')).read_text()
+ assert 'images/'+stem+'.gif' in src, f"{path} is not written by examples/{stem}.lms"
 images=list((r/'docs/images').glob('*'))
-assert len(images)>=8
+assert len(images)>=12
 for p in images:
  b=p.read_bytes()
  if p.suffix=='.png':

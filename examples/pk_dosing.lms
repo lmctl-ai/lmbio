@@ -1,0 +1,87 @@
+# Dosing regimen design: the same 800 mg a day of an oral drug (half-life 6 h, 40 L volume),
+# given as 400 mg every 12 h or 800 mg once a day. Both give the same average level
+# (Css,avg = dose / (clearance x interval) = 7.2 mg/L) and the same exposure per dose, but only
+# the twice-daily regimen stays inside the 3-12 mg/L therapeutic window. Each dose restarts the
+# model from the previous interval's end state; AUC is integrated as a rate rule.
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("oral_one_compartment").compartment("body", 1.0).species("G", "body", 0.0).species("C", "body", 0.0);
+m.param("ka", 1.0).param("ke", 0.11552453009332421).param("AUC", 0.0);
+m.reaction("absorb", "G -> C", "ka*G").reaction("eliminate", "C ->", "ke*C");
+m.rate_rule("AUC", "C");
+m.tol(0.0000000001, 0.000000000001);
+let clearance = 0.11552453009332421 * 40.0;
+for (regimen in range(0, 2)) {
+  let tau = 12.0;
+  let dose = 400.0;
+  let tag = "q12";
+  if (regimen == 1) { tau = 24.0; dose = 800.0; tag = "q24"; }
+  let doses = int(96.0 / tau);
+  let g = 0.0;
+  let c = 0.0;
+  let auc = 0.0;
+  let auc_last = 0.0;
+  let inside = 0;
+  let samples = 0;
+  for (k in range(0, doses)) {
+    m.set("G", g + dose / 40.0).set("C", c).set("AUC", auc);
+    let t0 = tau * float(k);
+    let r = m.simulate(t0, t0 + tau, int(tau * 10.0) + 1);
+    r.save_csv("build/examples/pk_dosing_" + tag + "_" + str(k) + ".csv");
+    auc_last = r.final("AUC") - auc;
+    g = r.final("G");
+    c = r.final("C");
+    auc = r.final("AUC");
+    if (t0 >= 72.0) {
+      for (i in range(1, r.rows())) {
+        let level = r.value("C", i);
+        samples = samples + 1;
+        if (level >= 3.0 && level <= 12.0) { inside = inside + 1; }
+      }
+    }
+  }
+  # steady state: one interval's exposure equals dose / clearance, so Css,avg is the same for both
+  bio.assert_close(auc_last, dose / clearance, 0.005 * dose / clearance);
+  bio.assert_close(auc_last / tau, 800.0 / 24.0 / clearance, 0.05);
+  let percent = 100.0 * float(inside) / float(samples);
+  if (regimen == 0) { bio.assert_true(percent > 99.9); } else { bio.assert_true(percent < 70.0); }
+  bio.print("window," + tag + "," + str(floor(percent + 0.5)) + "," + str(auc_last / tau));
+}
+end _dsl_
+savedsl(p, "build/pk_dosing.dslb");
+r = system ${dsl_cli(p)} --dsl build/pk_dosing.dslb;
+assert(r.code == 0);
+q12 = "";
+q24 = "";
+avg = "";
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "window,")) {
+    parts = split(line, ",");
+    if (parts[1] == "q12") { q12 = parts[2]; avg = str(round(num(parts[3]) * 10) / 10); } else { q24 = parts[2]; }
+  }
+}
+key12 = "400 mg every 12 h: " + q12 + "% of day 4 in window";
+key24 = "800 mg once daily: " + q24 + "% of day 4 in window";
+title = "Same daily dose, different safety: average level " + avg + " mg/L for both regimens";
+
+mkdir("images");
+v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/pk_dosing.png", 960, 540);
+plot.cmd("set datafile separator ','");
+plot.cmd("set border 3; set tics nomirror; set grid back lc rgb '#e4e9ef'");
+plot.cmd(${"set title '" + title + "' font ',14'"});
+plot.cmd("set xlabel 'Hours since first dose'; set ylabel 'Plasma concentration (mg/L)'");
+plot.cmd("set xrange [0:96]; set yrange [0:19]; set xtics 12");
+plot.cmd("set key at graph 0.99, graph 0.99 right top Left reverse samplen 2 opaque box lc rgb '#ffffff'");
+plot.cmd("set object 1 rect from 0,3 to 96,12 fc rgb '#e6f3ea' fs solid 1.0 noborder behind");
+plot.cmd("set rmargin 13");
+plot.cmd("set label 1 \"therapeutic\nwindow\n3-12 mg/L\" at graph 1.015, first 8.2 left tc rgb '#3d7a4f'");
+plot.cmd("set label 2 'toxic' at graph 1.015, first 13.5 left tc rgb '#b0413e'");
+plot.cmd("set label 3 'ineffective' at graph 1.015, first 1.5 left tc rgb '#8a8f96'");
+plot.cmd(${"plot for [k=0:7] sprintf('build/examples/pk_dosing_q12_%d.csv', k) using 1:3 with lines lw 3 lc rgb '#007f86' title (k==0 ? '" + key12 + "' : ''), for [k=0:3] sprintf('build/examples/pk_dosing_q24_%d.csv', k) using 1:3 with lines lw 3 lc rgb '#df6b38' title (k==0 ? '" + key24 + "' : '')"});
+plot.close();
+end _dsl_
+savedsl(v, "build/pk_dosing-plot.dslb");
+r = system ${dsl_cli(v)} --dsl build/pk_dosing-plot.dslb;
+assert(r.code == 0);
+println("wrote images/pk_dosing.png");

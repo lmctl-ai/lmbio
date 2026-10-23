@@ -1,0 +1,90 @@
+# Gene-expression noise: two ways to keep 10 protein molecules per cell on average.
+# Direct production (birth-death) gives a Poisson distribution: variance = mean, Fano factor 1.
+# Production in bursts from short-lived mRNA (each mRNA makes b = 5 proteins on average) gives the
+# same mean but Fano factor 1 + b * gm / (gm + gp) = 5.55 (Thattai and van Oudenaarden 2001).
+# Gillespie SSA checks both against the formulas; the ODE predicts only the mean.
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let direct = bio.model("birth_death").compartment("cell", 1.0).species("P", "cell", 0.0).param("k", 10.0).param("g", 1.0);
+direct.reaction("make", " -> P", "k").reaction("decay", "P ->", "g*P");
+let ode = direct.simulate(0.0, 8.0, 161);
+ode.save_csv("build/examples/gene_noise_ode.csv");
+bio.assert_close(ode.final("P"), 10.0 * (1.0 - pow(2.718281828459045, -8.0)), 0.00001);
+for (s in range(0, 8)) {
+  let path = direct.ssa(8.0, 161, 1000 + s);
+  path.save_csv("build/examples/gene_noise_path_" + str(s) + ".csv");
+}
+let long = direct.ssa(5000.0, 50001, 7);
+long.save_csv("build/examples/gene_noise_direct.csv");
+let sum = 0.0;
+let sq = 0.0;
+for (i in range(1000, 50001)) {
+  let x = long.value("P", i);
+  sum = sum + x;
+  sq = sq + x * x;
+}
+let mean = sum / 49001.0;
+let fano = (sq / 49001.0 - mean * mean) / mean;
+bio.assert_close(mean, 10.0, 0.2);
+bio.assert_close(fano, 1.0, 0.1);
+let bursty = bio.model("two_stage").compartment("cell", 1.0).species("M", "cell", 0.0).species("P", "cell", 0.0);
+bursty.param("km", 0.2).param("gm", 1.0).param("kp", 5.0).param("gp", 0.1);
+bursty.reaction("transcribe", " -> M", "km").reaction("mrna_decay", "M ->", "gm*M");
+bursty.reaction("translate", "M -> M + P", "kp*M").reaction("decay", "P ->", "gp*P");
+let b = bursty.ssa(40000.0, 80001, 11);
+b.save_csv("build/examples/gene_noise_bursty.csv");
+let bsum = 0.0;
+let bsq = 0.0;
+for (i in range(1000, 80001)) {
+  let x = b.value("P", i);
+  bsum = bsum + x;
+  bsq = bsq + x * x;
+}
+let bmean = bsum / 79001.0;
+let bfano = (bsq / 79001.0 - bmean * bmean) / bmean;
+bio.assert_close(bmean, 10.0, 0.5);
+bio.assert_close(bfano, 1.0 + 5.0 * 1.0 / 1.1, 0.6);
+bio.print("stats," + str(mean) + "," + str(fano) + "," + str(bmean) + "," + str(bfano));
+end _dsl_
+savedsl(p, "build/gene_noise.dslb");
+r = system ${dsl_cli(p)} --dsl build/gene_noise.dslb;
+assert(r.code == 0);
+fd = "";
+fb = "";
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "stats,")) {
+    parts = split(line, ",");
+    fd = str(round(num(parts[2]) * 100) / 100);
+    fb = str(round(num(parts[4]) * 100) / 100);
+  }
+}
+key_direct = "Direct: Fano " + fd + " (theory 1)";
+key_bursty = "Bursty: Fano " + fb + " (theory 5.55)";
+
+mkdir("images");
+v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/gene_noise.png", 960, 540);
+plot.cmd("set datafile separator ','");
+plot.cmd("set multiplot layout 1,2 title 'Gene-expression noise: same average, very different cells' font ',14'");
+plot.cmd("set border 3; set tics nomirror; set grid back lc rgb '#e4e9ef'");
+plot.cmd("set title 'Eight cells (SSA) vs the ODE'");
+plot.cmd("set xlabel 'Time (protein lifetimes)'; set ylabel 'Protein molecules'");
+plot.cmd("set xrange [0:8]; set yrange [0:22]");
+plot.cmd("set key top left Left reverse samplen 2");
+plot.cmd("plot for [s=0:7] sprintf('build/examples/gene_noise_path_%d.csv', s) using 1:2 with steps lw 1.5 lc rgb '#7fbfc3' title (s==0 ? 'Single cells (Gillespie)' : ''), 'build/examples/gene_noise_ode.csv' using 1:2 with lines lw 4 lc rgb '#df6b38' title 'ODE: 10 (1 - exp(-t))'");
+plot.cmd("set title 'Long-run distribution of one cell'");
+plot.cmd("set xlabel 'Protein molecules per cell'; set ylabel 'Fraction of time'");
+plot.cmd("set xrange [-0.5:40.5]; set yrange [0:0.17]");
+plot.cmd("set key top right Right noreverse samplen 2");
+plot.cmd("set style fill transparent solid 0.55 noborder");
+plot.cmd("set boxwidth 0.9");
+plot.cmd("pois(k) = exp(k*log(10.0) - 10.0 - lgamma(k + 1))");
+plot.cmd("set samples 41");
+plot.cmd(${"plot 'build/examples/gene_noise_direct.csv' every ::1000 using 2:(1.0/49001) smooth frequency with boxes lc rgb '#007f86' title '" + key_direct + "', 'build/examples/gene_noise_bursty.csv' every ::1000 using 3:(1.0/79001) smooth frequency with boxes lc rgb '#df6b38' title '" + key_bursty + "', [0:40] '+' using 1:(pois($1)) with linespoints lw 2 pt 7 ps 0.6 lc rgb '#1d2733' title 'Poisson(10)'"});
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(v, "build/gene_noise-plot.dslb");
+r = system ${dsl_cli(v)} --dsl build/gene_noise-plot.dslb;
+assert(r.code == 0);
+println("wrote images/gene_noise.png");

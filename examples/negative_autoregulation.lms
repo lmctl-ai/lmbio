@@ -1,0 +1,72 @@
+# Design study: negative autoregulation speeds up a gene's response (Rosenfeld, Elowitz and Alon 2002).
+# A simply regulated protein (made at a constant rate, diluted at rate 1) reaches half its steady
+# level at t = ln 2. A protein that represses its own promoter (Hill n = 2, threshold K), tuned to
+# the SAME steady level, gets there faster; for strong repression x^3 = 1 - exp(-3t), so the
+# half-rise time tends to ln(8/7)/3 = 0.0445 and the speed-up to 15.6.
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("autoregulation").compartment("cell", 1.0).species("X", "cell", 0.0).param("b", 1.0).param("K", 1.0).param("feedback", 0.0);
+# feedback = 0: constant production b; feedback = 1: production b/(1 + (X/K)^2)
+m.reaction("make", " -> X", "b*(1 - feedback) + feedback*b/(1 + (X/K)^2)").reaction("dilute", "X ->", "X");
+m.tol(0.0000000001, 0.000000000001);
+for (j in range(0, 13)) {
+  let K = 2.0 / pow(2.0, float(j) * 0.5);
+  if (j == 12) { K = 0.0; }
+  if (j < 12) { m.set("feedback", 1.0).set("K", K).set("b", 1.0 + 1.0 / (K * K)); }
+  if (j == 12) { m.set("feedback", 0.0).set("b", 1.0); }
+  let r = m.simulate(0.0, 10.0, 10001);
+  bio.assert_close(r.final("X"), 1.0, 0.001);
+  # half-rise time by linear interpolation between samples
+  let half = -1.0;
+  for (i in range(1, r.rows())) {
+    if (half < 0.0 && r.value("X", i) >= 0.5) {
+      let a = r.value("X", i - 1);
+      half = r.value("time", i - 1) + 0.001 * (0.5 - a) / (r.value("X", i) - a);
+    }
+  }
+  if (j == 12) {
+    bio.assert_close(half, 0.6931471805599453, 0.0005);
+    r.save_csv("build/examples/negative_autoregulation_simple.csv");
+  } else {
+    bio.print("row," + str(1.0 / K) + "," + str(0.6931471805599453 / half));
+    if (j == 2 || j == 6 || j == 11) { r.save_csv("build/examples/negative_autoregulation_" + str(j) + ".csv"); }
+  }
+  if (j == 11) { bio.assert_close(half, 0.044510, 0.0015); }
+}
+end _dsl_
+savedsl(p, "build/negative_autoregulation.dslb");
+r = system ${dsl_cli(p)} --dsl build/negative_autoregulation.dslb;
+assert(r.code == 0);
+csv = "strength,speedup\n";
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "row,")) { csv = csv + substr(line, 4) + "\n"; }
+}
+write_file("build/examples/negative_autoregulation_speedup.csv", csv);
+
+mkdir("images");
+v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/negative_autoregulation.png", 960, 540);
+plot.cmd("set datafile separator ','");
+plot.cmd("set multiplot layout 1,2 title 'Negative autoregulation: a gene that represses itself responds faster' font ',14'");
+plot.cmd("set border 3; set tics nomirror; set grid back lc rgb '#e4e9ef'");
+plot.cmd("set title 'Switch-on, same final level'");
+plot.cmd("set xlabel 'Time (protein lifetimes)'; set ylabel 'Protein / steady level'");
+plot.cmd("set xrange [0:2]; set yrange [0:1.08]");
+plot.cmd("set key bottom right Left reverse samplen 2");
+plot.cmd("set arrow 1 from 0,0.5 to 2,0.5 nohead lc rgb '#b8c0c8' dt 2");
+plot.cmd("set arrow 2 from 0.6931,0 to 0.6931,0.5 nohead lc rgb '#5864a8' dt 2");
+plot.cmd("set label 1 't = ln 2' at 0.72,0.42 tc rgb '#5864a8'");
+plot.cmd("plot 'build/examples/negative_autoregulation_simple.csv' using 1:2 with lines lw 3 lc rgb '#5864a8' title 'Simple regulation', 'build/examples/negative_autoregulation_2.csv' using 1:2 with lines lw 3 lc rgb '#9ccfd2' title 'Self-repression, K = 1', 'build/examples/negative_autoregulation_6.csv' using 1:2 with lines lw 3 lc rgb '#2e9aa0' title 'Self-repression, K = 0.25', 'build/examples/negative_autoregulation_11.csv' using 1:2 with lines lw 3 lc rgb '#00545a' title 'Self-repression, K = 0.044'");
+plot.cmd("unset arrow; unset label");
+plot.cmd("set title 'Speed-up of the half-rise time'");
+plot.cmd("set xlabel 'Repression strength 1/K (log scale)'; set ylabel 'ln 2 / half-rise time'");
+plot.cmd("set logscale x; set xrange [0.4:30]; set yrange [0:17]");
+plot.cmd("set key bottom right Right noreverse samplen 2");
+plot.cmd("plot 15.573 with lines lw 2 dt 2 lc rgb '#df6b38' title 'Limit 3 ln2 / ln(8/7) = 15.6', 'build/examples/negative_autoregulation_speedup.csv' using 1:2 with linespoints lw 3 pt 7 ps 1.5 lc rgb '#007f86' title 'CVODE'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(v, "build/negative_autoregulation-plot.dslb");
+r = system ${dsl_cli(v)} --dsl build/negative_autoregulation-plot.dslb;
+assert(r.code == 0);
+println("wrote images/negative_autoregulation.png");

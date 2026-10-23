@@ -1,0 +1,157 @@
+# Genetic toggle switch (Gardner, Cantor and Collins 2000): two repressors shut each other off.
+# Each protein is made at rate a/(1 + repressor^2) and diluted at rate 1. With a = 10 the
+# circuit is bistable: two stable states and a saddle at exactly (2, 2), because 2 = 10/(1 + 2^2).
+# lmbio integrates 22 starting points; lmdraw draws the circuit next to the phase portrait.
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("toggle").compartment("cell", 1.0).species("U", "cell", 0.0).species("V", "cell", 0.0).param("a", 10.0);
+m.reaction("make_U", " -> U", "a/(1 + V^2)").reaction("dilute_U", "U ->", "U");
+m.reaction("make_V", " -> V", "a/(1 + U^2)").reaction("dilute_V", "V ->", "V");
+m.tol(0.0000000001, 0.000000000001);
+# the high-U state: U = a/(1+V^2) and V = a/(1+U^2) together
+m.set("U", 10.0).set("V", 0.0);
+let high = m.steady_state();
+let u = high.final("U");
+let w = high.final("V");
+bio.assert_close(u, 10.0 / (1.0 + w * w), 0.000001);
+bio.assert_close(w, 10.0 / (1.0 + u * u), 0.000001);
+bio.assert_true(u > 9.0 && w < 0.2);
+bio.print("state," + str(u) + "," + str(w));
+# the saddle on the diagonal is an exact fixed point
+m.set("U", 2.0).set("V", 2.0);
+let saddle = m.simulate(0.0, 5.0, 6);
+bio.assert_close(saddle.final("U"), 2.0, 0.000001);
+# 20 starts around the edge of the box [0,12]^2 plus two on the diagonal
+for (k in range(0, 22)) {
+  let s = (float(k) + 0.5) * 2.4;
+  let u0 = 0.0;
+  let v0 = 0.0;
+  if (s < 12.0) { u0 = s; v0 = 12.0; }
+  if (s >= 12.0 && s < 24.0) { u0 = 12.0; v0 = 24.0 - s; }
+  if (s >= 24.0 && s < 36.0) { u0 = 36.0 - s; v0 = 0.0; }
+  if (s >= 36.0 && s < 48.0) { u0 = 0.0; v0 = s - 36.0; }
+  if (k == 20) { u0 = 0.3; v0 = 0.3; }
+  if (k == 21) { u0 = 11.5; v0 = 11.5; }
+  m.set("U", u0).set("V", v0);
+  let run = m.simulate(0.0, 30.0, 301);
+  if (u0 > v0) { bio.assert_close(run.final("U"), u, 0.001); }
+  if (u0 < v0) { bio.assert_close(run.final("V"), u, 0.001); }
+  if (k >= 20) { bio.assert_close(run.final("U"), 2.0, 0.001); }
+  run.save_csv("build/examples/toggle_switch_" + str(k) + ".csv");
+}
+end _dsl_
+savedsl(p, "build/toggle_switch.dslb");
+r = system ${dsl_cli(p)} --dsl build/toggle_switch.dslb;
+assert(r.code == 0);
+hi = 0.0;
+lo = 0.0;
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "state,")) {
+    parts = split(line, ",");
+    hi = num(parts[1]);
+    lo = num(parts[2]);
+  }
+}
+
+# phase-plane geometry in pixels: data [0,12]^2 -> plot box
+px0 = 500.0;
+py0 = 112.0;
+pw = 400.0;
+ph = 352.0;
+# DSL coordinates must be floats; F keeps every interpolated pixel non-integral
+fn F(x) { return floor(x) + 0.5; }
+fn X(u) { return px0 + u / 12.0 * pw; }
+fn Y(v) { return py0 + ph - v / 12.0 * ph; }
+to_u = "";
+to_v = "";
+to_saddle = "";
+starts = "";
+for (k in range(0, 22)) {
+  rows = csv_parse(read_file("build/examples/toggle_switch_" + str(k) + ".csv"));
+  # keep a point only when it is at least 3 px from the last kept one (paths stay small)
+  d = "";
+  lastx = -100.0;
+  lasty = -100.0;
+  for (i in range(0, rows.len())) {
+    x = round(X(num(rows[i]["U"])));
+    y = round(Y(num(rows[i]["V"])));
+    if (abs(x - lastx) + abs(y - lasty) >= 3) {
+      d = d + (i == 0 ? "M " : " L ") + str(x) + " " + str(y);
+      lastx = x;
+      lasty = y;
+    }
+  }
+  last = rows[rows.len() - 1];
+  if (k >= 20) { to_saddle = to_saddle + d + " "; }
+  else if (num(last["U"]) > num(last["V"])) { to_u = to_u + d + " "; }
+  else { to_v = to_v + d + " "; }
+}
+# nullclines: U = a/(1+V^2) (dU/dt = 0) and V = a/(1+U^2) (dV/dt = 0)
+null_u = "";
+null_v = "";
+for (i in range(0, 121)) {
+  t = i * 0.1;
+  null_u = null_u + (i == 0 ? "M " : " L ") + str(round(X(10.0 / (1.0 + t * t)) * 10) / 10) + " " + str(round(Y(t) * 10) / 10);
+  null_v = null_v + (i == 0 ? "M " : " L ") + str(round(X(t) * 10) / 10) + " " + str(round(Y(10.0 / (1.0 + t * t)) * 10) / 10);
+}
+hi_label = "(" + str(round(hi * 100.0) / 100.0) + ", " + str(round(lo * 100.0) / 100.0) + ")";
+lo_label = "(" + str(round(lo * 100.0) / 100.0) + ", " + str(round(hi * 100.0) / 100.0) + ")";
+hx = X(hi);
+hy = Y(lo);
+lx = X(lo);
+ly = Y(hi);
+sx = X(2.0);
+sy = Y(2.0);
+
+mkdir("images");
+mkdir("build/rendered");
+d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(960, 540, "#ffffff");
+scene.text(36.0, 48.0, 24.0, "Genetic toggle switch: one circuit, two memories", "#1d2733").set_attr("font-weight", "700");
+scene.text(36.0, 76.0, 15.0, "Two repressors shut each other off; a transient push decides which one stays on.", "#5a6672");
+# circuit
+let gu = scene.rect(46.0, 190.0, 150.0, 58.0, "#e3f2f2");
+gu.set_attr("stroke", "#007f86"); gu.set_attr("stroke-width", "2.5"); gu.set_attr("rx", "10");
+let gv = scene.rect(256.0, 190.0, 150.0, 58.0, "#ebedf7");
+gv.set_attr("stroke", "#5864a8"); gv.set_attr("stroke-width", "2.5"); gv.set_attr("rx", "10");
+scene.text(121.0, 225.0, 17.0, "Repressor U", "#00545a").set_attr("text-anchor", "middle");
+scene.text(331.0, 225.0, 17.0, "Repressor V", "#3a4378").set_attr("text-anchor", "middle");
+scene.path("M 121 190 C 121 120 331 120 331 182", "none", "#007f86", 3.0);
+scene.line(316.0, 184.0, 346.0, 184.0, "#007f86", 4.0);
+scene.path("M 331 248 C 331 318 121 318 121 256", "none", "#5864a8", 3.0);
+scene.line(106.0, 254.0, 136.0, 254.0, "#5864a8", 4.0);
+scene.text(226.0, 130.0, 14.0, "U blocks V's promoter", "#007f86").set_attr("text-anchor", "middle");
+scene.text(226.0, 322.0, 14.0, "V blocks U's promoter", "#5864a8").set_attr("text-anchor", "middle");
+scene.text(46.0, 372.0, 15.0, "dU/dt = a / (1 + V^2) - U", "#1d2733");
+scene.text(46.0, 396.0, 15.0, "dV/dt = a / (1 + U^2) - V,   a = 10", "#1d2733");
+scene.text(46.0, 432.0, 14.0, ${"Stable states  U-on " + hi_label + "  and  V-on " + lo_label}, "#1d2733");
+scene.text(46.0, 456.0, 14.0, "Saddle at exactly (2, 2): 2 = 10 / (1 + 2^2)", "#1d2733");
+scene.text(46.0, 488.0, 13.0, "Starts above the diagonal end V-on, starts below it end U-on: the diagonal (dashed, flowing into the saddle) is the boundary between the two memories.", "#5a6672", 400.0);
+# phase portrait
+let ax = scene.axes(${F(px0)}, ${F(py0)}, ${F(pw)}, ${F(ph)}, 0.0, 12.0, 0.0, 12.0, 6, "#5a6672");
+scene.text(${F(px0 + pw / 2.0)}, ${F(py0 + ph + 46.0)}, 14.0, "Repressor U", "#1d2733").set_attr("text-anchor", "middle");
+scene.text(${F(px0 - 34.0)}, ${F(py0 - 14.0)}, 14.0, "Repressor V", "#1d2733");
+let tu = scene.path(${to_u}, "none", "#007f86", 1.8);
+tu.set_attr("stroke-opacity", "0.75");
+let tv = scene.path(${to_v}, "none", "#5864a8", 1.8);
+tv.set_attr("stroke-opacity", "0.75");
+let ts = scene.path(${to_saddle}, "none", "#8a8f96", 1.8);
+ts.set_attr("stroke-dasharray", "5 4");
+scene.path(${null_u}, "none", "#df6b38", 3.0);
+scene.path(${null_v}, "none", "#e3a21a", 3.0);
+scene.text(${F(X(10.4))}, ${F(Y(1.4))}, 13.0, "dU/dt = 0", "#df6b38");
+scene.text(${F(X(1.2))}, ${F(Y(10.6))}, 13.0, "dV/dt = 0", "#b07a0a");
+scene.circle(${F(hx)}, ${F(hy)}, 8.0, "#007f86");
+scene.circle(${F(lx)}, ${F(ly)}, 8.0, "#5864a8");
+let sd = scene.circle(${F(sx)}, ${F(sy)}, 7.0, "#ffffff");
+sd.set_attr("stroke", "#1d2733"); sd.set_attr("stroke-width", "2.5");
+scene.text(${F(hx - 6.0)}, ${F(hy - 26.0)}, 13.0, "U-on", "#00545a").set_attr("text-anchor", "end");
+scene.text(${F(lx + 14.0)}, ${F(ly + 4.0)}, 13.0, "V-on", "#3a4378");
+scene.text(${F(sx + 12.0)}, ${F(sy - 10.0)}, 13.0, "saddle", "#1d2733");
+scene.render_png("build/rendered/toggle_switch.png", 960, 540, 1);
+end _dsl_
+savedsl(d, "build/toggle_switch-draw.dslb");
+r = system ${dsl_cli(d)} --dsl build/toggle_switch-draw.dslb;
+assert(r.code == 0);
+copy_file("build/rendered/toggle_switch.png", "images/toggle_switch.png");
+println("wrote images/toggle_switch.png");
