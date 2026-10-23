@@ -85,12 +85,12 @@ Save it as `conversion.lms` and run `lmscript conversion.lms`. The host CLI acce
 | `model.param(id,value)` | kinetic parameter |
 | `model.reaction(id,"A + B -> 2 C","k*A*B")` | stoichiometry and rate expression; empty sides support sources/sinks |
 | `model.reversible(id,"kr*C")` | add reverse rate to an existing reaction |
-| `model.mass_action(id,"2 A -> D","k")` | mass-action law `k*V*A^2` for ODEs and propensity `k*A*(A-1)` for SSA, from one call (0.2.0) |
-| `model.mass_action_reversible(id,"A + B -> C","kf","kr")` | the same with a mass-action reverse rate (0.2.0) |
+| `model.mass_action(id,"2 A -> D","k")` | mass-action law `k*V*A^2` for ODEs and propensity `k*A*(A-1)` for SSA, from one call (0.1.1) |
+| `model.mass_action_reversible(id,"A + B -> C","kf","kr")` | the same with a mass-action reverse rate (0.1.1) |
 | `model.rule(id,"expression")` | assignment rule |
 | `model.rate_rule(id,"expression")` | differential rule |
-| `model.set(id,value)`, `model.get(id)` | change/query initial species, parameter or compartment-size values (compartments from 0.2.0) |
-| `model.set_state(result)` | restart from a result's last row, e.g. before a dose (0.2.0) |
+| `model.set(id,value)`, `model.get(id)` | change/query initial species, parameter or compartment-size values (compartments from 0.1.1) |
+| `model.set_state(result)` | restart from a result's last row, e.g. before a dose (0.1.1) |
 | `model.tol(rtol,atol)`, `model.validate()` | configure error control and validate the network |
 | `model.simulate(t0,t1,points)` | CVODE BDF time course |
 | `model.steady_state()` | steady state with residual verification |
@@ -99,14 +99,14 @@ Save it as `conversion.lms` and run `lmscript conversion.lms`. The host CLI acce
 | `model.save_sbml(path)` | write supported semantics as SBML L3V2 MathML |
 | `result.value(id,row)`, `result.final(id)` | named values, zero-based rows |
 | `result.rows/cols/get/column` | matrix dimensions, indexed values, column names |
-| `result.max(id)`, `result.time_of_max(id)`, `result.min(id)` | sampled extremes and the first time of the maximum (`min` from 0.2.0) |
-| `result.integral(id)` | trapezoid area under a column, e.g. drug exposure AUC (0.2.0) |
-| `result.crossing(id,level)` | first time a column reaches a level, linearly interpolated (0.2.0) |
-| `result.append(next)` | join consecutive runs; a jump at the joint (a dose) keeps both rows (0.2.0) |
+| `result.max(id)`, `result.time_of_max(id)`, `result.min(id)` | sampled extremes and the first time of the maximum (`min` from 0.1.1) |
+| `result.integral(id)` | trapezoid area under a column, e.g. drug exposure AUC (0.1.1) |
+| `result.crossing(id,level)` | first time a column reaches a level, linearly interpolated (0.1.1) |
+| `result.append(next)` | join consecutive runs; a jump at the joint (a dose) keeps both rows (0.1.1) |
 | `result.save_csv(path)` | comma-separated matrix with header |
 | `bio.assert_close(a,b,absolute_tolerance)`, `bio.assert_true(bool)`, `bio.print(text)` | script assertions and output |
 
-Methods marked 0.2.0 are in this source tree and arrive with the next release; the gallery examples use only methods available in the current release.
+Methods marked 0.1.1 were added in the v0.1.1 release.
 
 Results contain `time`, species in creation order, then parameters in identifier order. Simulation does not change initial model values. CSV is the exchange format for other hosts. The DSL has no list/map/callback values; kinetic laws and rules are expression strings. Expressions support arithmetic, powers, scientific notation, and common elementary functions (`exp`, `log`, `sin`, `sqrt`, `min`, `max`, `sign` and others). DSL numeric literals themselves use decimal notation, and the DSL itself has `pow` and `sqrt` but no `exp`/`log` (write `pow(2.718281828459045, x)`).
 
