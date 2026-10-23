@@ -473,8 +473,10 @@ std::vector<double> output_state(const Network &n, double t,
 
 double Result::value(const std::string &id, int row) const {
   auto it = std::find(columns.begin(), columns.end(), id);
-  if (it == columns.end() || row < 0 || row >= rows)
-    bad("unknown result column or row");
+  if (it == columns.end())
+    bad("unknown result column: " + id);
+  if (row < 0 || row >= rows)
+    bad("result row outside range");
   return data[size_t(row) * columns.size() + size_t(it - columns.begin())];
 }
 double Result::final(const std::string &id) const {
