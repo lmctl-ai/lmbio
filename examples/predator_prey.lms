@@ -1,0 +1,10 @@
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m=bio.model("ecology").compartment("v",1.0).species("prey","v",10.0).species("pred","v",5.0).reaction("birth","prey -> 2 prey","prey").reaction("hunt","prey + pred -> 2 pred","0.1*prey*pred").reaction("death","pred ->","pred");
+let r=m.simulate(0.0,20.0,401);bio.assert_true(r.final("prey")>0.0);r.save_csv("build/examples/predator_prey.csv");
+end _dsl_
+savedsl(p, "build/predator_prey.dslb");
+r = system ${dsl_cli(p)} --dsl build/predator_prey.dslb;
+assert(r.code == 0);
+r = system bash examples/render-one.sh predator_prey;
+assert(r.code == 0);

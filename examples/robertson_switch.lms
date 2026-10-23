@@ -1,0 +1,10 @@
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m=bio.model("robertson").compartment("v",1.0).species("A","v",1.0).species("B","v",0.0).species("C","v",0.0).reaction("f","A -> B","0.04*A").reaction("r","B + C -> A + C","10000*B*C").reaction("sink","2 B -> B + C","30000000*B*B");
+let r=m.simulate(0.0,40.0,401);bio.assert_close(r.final("A"),0.715827,0.0001);r.save_csv("build/examples/robertson_switch.csv");
+end _dsl_
+savedsl(p, "build/robertson_switch.dslb");
+r = system ${dsl_cli(p)} --dsl build/robertson_switch.dslb;
+assert(r.code == 0);
+r = system bash examples/render-one.sh robertson_switch;
+assert(r.code == 0);

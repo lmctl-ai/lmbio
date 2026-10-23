@@ -1,0 +1,10 @@
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m=bio.model("cascade").compartment("v",1.0).species("A","v",1.0).species("B","v",0.0).species("C","v",0.0).reaction("first","A -> B","A").reaction("next","B -> C","B");
+let r=m.simulate(0.0,8.0,161);bio.assert_close(r.final("C"),0.99698084,0.00001);r.save_csv("build/examples/cascade_delay.csv");
+end _dsl_
+savedsl(p, "build/cascade_delay.dslb");
+r = system ${dsl_cli(p)} --dsl build/cascade_delay.dslb;
+assert(r.code == 0);
+r = system bash examples/render-one.sh cascade_delay;
+assert(r.code == 0);

@@ -1,3 +1,4 @@
+mkdir("build/examples");
 p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("enzyme").compartment("cell", 1.0).species("S", "cell", 10.0).species("E", "cell", 1.0).species("ES", "cell", 0.0).species("P", "cell", 0.0).param("kf", 2.0).param("kr", 1.0).param("kc", 0.5).reaction("bind", "S + E -> ES", "kf*S*E").reversible("bind", "kr*ES").reaction("cat", "ES -> E + P", "kc*ES");
 let r = m.simulate(0.0, 20.0, 201);
@@ -6,3 +7,5 @@ r.save_csv("build/examples/biochemical_network.csv");
 end _dsl_
 savedsl(p, "build/biochemical_network.dslb");
 system ${dsl_cli(p)} --dsl build/biochemical_network.dslb;
+r = system bash examples/render-one.sh biochemical_network;
+assert(r.code == 0);

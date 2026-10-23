@@ -1,5 +1,36 @@
 # lmbio
 
+Biochemical networks, molecular noise and reaction dynamics, computed with CVODE and drawn with lmplot.
+
+| Enzyme turns substrate into product | Molecular noise at low copy number | Half-life as a molecular clock |
+| --- | --- | --- |
+| ![Enzyme turns substrate into product](docs/images/biochemical_network.png) | ![Molecular noise at low copy number](docs/images/stochastic.png) | ![Half-life as a molecular clock](docs/images/decay_clock.png) |
+| [Enzyme turns substrate into product](examples/biochemical_network.lms) | [Molecular noise at low copy number](examples/stochastic.lms) | [Half-life as a molecular clock](examples/decay_clock.lms) |
+
+| Reversible chemistry finds equilibrium | Predator and prey cycle together | Stiff chemistry spans fast and slow scales |
+| --- | --- | --- |
+| ![Reversible chemistry finds equilibrium](docs/images/reversible_balance.png) | ![Predator and prey cycle together](docs/images/predator_prey.png) | ![Stiff chemistry spans fast and slow scales](docs/images/robertson_switch.png) |
+| [Reversible chemistry finds equilibrium](examples/reversible_balance.lms) | [Predator and prey cycle together](examples/predator_prey.lms) | [Stiff chemistry spans fast and slow scales](examples/robertson_switch.lms) |
+
+[Animated time cursor](docs/images/decay_clock.gif) · [Regenerate every figure](examples/render-all.sh)
+
+## Install and run
+
+Download a binary from [releases](https://github.com/lmctl-ai/lmbio/releases), or let the example binding install it. Run `lmscript examples/biochemical_network.lms`. For figures, put `lmplot` on PATH or set `VISUALS_NETWORK=1`; `ffmpeg` creates the optional animation.
+
+## Gallery
+
+| Example | Result |
+| --- | --- |
+| [biochemical_network.lms](examples/biochemical_network.lms) | [Enzyme turns substrate into product](docs/images/biochemical_network.png) |
+| [stochastic.lms](examples/stochastic.lms) | [Molecular noise at low copy number](docs/images/stochastic.png) |
+| [decay_clock.lms](examples/decay_clock.lms) | [Half-life as a molecular clock](docs/images/decay_clock.png) |
+| [reversible_balance.lms](examples/reversible_balance.lms) | [Reversible chemistry finds equilibrium](docs/images/reversible_balance.png) |
+| [predator_prey.lms](examples/predator_prey.lms) | [Predator and prey cycle together](docs/images/predator_prey.png) |
+| [robertson_switch.lms](examples/robertson_switch.lms) | [Stiff chemistry spans fast and slow scales](docs/images/robertson_switch.png) |
+| [cascade_delay.lms](examples/cascade_delay.lms) | [A reaction cascade delays its product](docs/images/cascade_delay.png) |
+| [logistic_limit.lms](examples/logistic_limit.lms) | [Crowding limits population growth](docs/images/logistic_limit.png) |
+
 Biochemical reaction networks and SBML-lite for lmscript in one static executable. Build models with chained calls or load SBML Level 3 core XML, integrate stiff kinetics with CVODE BDF, find steady states with KINSOL and integration fallback, run seeded Gillespie simulations, and export CSV for [lmplot](https://github.com/lmctl-ai/lmplot).
 
 [![CI](https://github.com/lmctl-ai/lmbio/actions/workflows/ci.yml/badge.svg)](https://github.com/lmctl-ai/lmbio/actions/workflows/ci.yml)

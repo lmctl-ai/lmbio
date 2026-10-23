@@ -1,0 +1,10 @@
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m=bio.model("decay").compartment("v",1.0).species("A","v",1.0).param("k",0.7).reaction("loss","A ->","k*A");
+let r=m.simulate(0.0,6.0,121);bio.assert_close(r.final("A"),0.01499557682,0.00001);r.save_csv("build/examples/decay_clock.csv");
+end _dsl_
+savedsl(p, "build/decay_clock.dslb");
+r = system ${dsl_cli(p)} --dsl build/decay_clock.dslb;
+assert(r.code == 0);
+r = system bash examples/render-one.sh decay_clock;
+assert(r.code == 0);

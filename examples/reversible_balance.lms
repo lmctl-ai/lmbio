@@ -1,0 +1,10 @@
+mkdir("build/examples");
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m=bio.model("balance").compartment("v",1.0).species("A","v",1.0).species("B","v",0.0).reaction("f","A -> B","2*A").reversible("f","B");
+let r=m.simulate(0.0,4.0,101);bio.assert_close(r.final("B"),0.6666666667,0.00001);r.save_csv("build/examples/reversible_balance.csv");
+end _dsl_
+savedsl(p, "build/reversible_balance.dslb");
+r = system ${dsl_cli(p)} --dsl build/reversible_balance.dslb;
+assert(r.code == 0);
+r = system bash examples/render-one.sh reversible_balance;
+assert(r.code == 0);

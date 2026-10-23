@@ -8,3 +8,5 @@
 - [06-ci.md](06-ci.md)
 - [07-examples.md](07-examples.md)
 - [08-open-items.md](08-open-items.md)
+
+- [09-visual-gallery.md](09-visual-gallery.md)
