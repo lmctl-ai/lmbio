@@ -97,6 +97,35 @@
             "returns": "Model"
           }
         ],
+        "mass_action": [
+          {
+            "params": [
+              "string",
+              "string",
+              "string"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "mass_action_reversible": [
+          {
+            "params": [
+              "string",
+              "string",
+              "string",
+              "string"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "set_state": [
+          {
+            "params": [
+              "Result"
+            ],
+            "returns": "Model"
+          }
+        ],
         "rule": [
           {
             "params": [
@@ -257,6 +286,39 @@
               "string"
             ],
             "returns": "float"
+          }
+        ],
+        "min": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "float"
+          }
+        ],
+        "integral": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "float"
+          }
+        ],
+        "crossing": [
+          {
+            "params": [
+              "string",
+              "float"
+            ],
+            "returns": "float"
+          }
+        ],
+        "append": [
+          {
+            "params": [
+              "Result"
+            ],
+            "returns": "Result"
           }
         ],
         "save_csv": [

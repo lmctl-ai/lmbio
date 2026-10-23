@@ -132,6 +132,21 @@ void register_host(dslvm::Registry &r, Host &h) {
           model(p).reversible(a[0].s, a[1].s);
           return Value::object("Model", p);
         });
+  check(r, "Model", "mass_action", {"string", "string", "string"}, "Model",
+        [](void *p, Args &a) {
+          model(p).mass_action(a[0].s, a[1].s, a[2].s);
+          return Value::object("Model", p);
+        });
+  check(r, "Model", "mass_action_reversible",
+        {"string", "string", "string", "string"}, "Model",
+        [](void *p, Args &a) {
+          model(p).mass_action_reversible(a[0].s, a[1].s, a[2].s, a[3].s);
+          return Value::object("Model", p);
+        });
+  check(r, "Model", "set_state", {"Result"}, "Model", [](void *p, Args &a) {
+    model(p).set_state(result(a[0].obj));
+    return Value::object("Model", p);
+  });
   check(r, "Model", "rule", {"string", "string"}, "Model",
         [](void *p, Args &a) {
           model(p).rule(a[0].s, a[1].s);
@@ -204,6 +219,19 @@ void register_host(dslvm::Registry &r, Host &h) {
   });
   check(r, "Result", "time_of_max", {"string"}, "float", [](void *p, Args &a) {
     return Value::real(result(p).time_of_max(a[0].s));
+  });
+  check(r, "Result", "min", {"string"}, "float", [](void *p, Args &a) {
+    return Value::real(result(p).minimum(a[0].s));
+  });
+  check(r, "Result", "integral", {"string"}, "float", [](void *p, Args &a) {
+    return Value::real(result(p).integral(a[0].s));
+  });
+  check(r, "Result", "crossing", {"string", "float"}, "float",
+        [](void *p, Args &a) {
+          return Value::real(result(p).crossing(a[0].s, a[1].f));
+        });
+  check(r, "Result", "append", {"Result"}, "Result", [&h](void *p, Args &a) {
+    return h.result(result(p).append(result(a[0].obj)));
   });
   check(r, "Result", "save_csv", {"string"}, "void", [](void *p, Args &a) {
     result(p).save_csv(a[0].s);

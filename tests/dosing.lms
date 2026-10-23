@@ -1,0 +1,29 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+# Repeated bolus doses by restarting from a result: C(t) is a sum of exponentials.
+let m = bio.model("bolus").compartment("plasma", 1.0).species("C", "plasma", 1.0).param("k", 0.5).reaction("clear", "C ->", "k*C");
+let first = m.simulate(0.0, 2.0, 41);
+bio.assert_close(first.crossing("C", 0.5), 0.6931471805599453 / 0.5, 0.002);
+bio.assert_close(first.min("C"), pow(2.718281828459045, -1.0), 0.000001);
+let all = first;
+let dosed = 1.0;
+for (n in range(1, 10)) {
+  m.set_state(all);
+  m.set("C", m.get("C") + 1.0);
+  dosed = dosed + 1.0;
+  let start = 2.0 * float(n);
+  all = all.append(m.simulate(start, start + 2.0, 41));
+}
+bio.assert_true(all.rows() == 10 * 41);
+let q = pow(2.718281828459045, -1.0);
+bio.assert_close(all.final("C"), q * (1.0 - pow(q, 10.0)) / (1.0 - q), 0.000001);
+# Mass balance: everything dosed is either cleared (k * AUC) or still present.
+bio.assert_close(all.integral("C"), (dosed - all.final("C")) / 0.5, 0.002);
+# Continuing without a jump drops the repeated row.
+let quiet = bio.model("quiet").compartment("c", 1.0).species("A", "c", 1.0).param("k", 1.0).reaction("loss", "A ->", "k*A");
+let part = quiet.simulate(0.0, 1.0, 11);
+quiet.set_state(part);
+let joined = part.append(quiet.simulate(1.0, 2.0, 11));
+bio.assert_true(joined.rows() == 21);
+bio.assert_close(joined.final("A"), pow(2.718281828459045, -2.0), 0.000001);
+end _dsl_
+savedsl(p, "build/dosing.dslb");

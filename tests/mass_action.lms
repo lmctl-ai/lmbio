@@ -1,0 +1,32 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+# Deterministic law: 2 A -> D gives d[A]/dt = -2 k [A]^2 in any volume, so A(t) = A0/(1 + 2 k A0 t).
+let m = bio.model("dimer").compartment("cell", 2.0).species("A", "cell", 1.0).species("D", "cell", 0.0).param("k", 0.5);
+m.mass_action("dimerize", "2 A -> D", "k");
+let r = m.simulate(0.0, 3.0, 31);
+bio.assert_close(r.final("A"), 1.0 / (1.0 + 2.0 * 0.5 * 3.0), 0.000001);
+bio.assert_close(r.final("A") + 2.0 * r.final("D"), 1.0, 0.000001);
+# Reversible mass action: A + B <-> C settles at C/(A B) = kf/kr.
+let e = bio.model("binding").compartment("c", 1.0).species("A", "c", 1.0).species("B", "c", 2.0).species("C", "c", 0.0).param("kf", 3.0).param("kr", 1.5);
+e.mass_action_reversible("bind", "A + B -> C", "kf", "kr");
+let s = e.steady_state();
+bio.assert_close(s.final("C") / (s.final("A") * s.final("B")), 2.0, 0.00001);
+# SSA propensity k*A*(A-1): one lone molecule can never dimerize; two always do.
+let one = bio.model("lone").compartment("c", 1.0).species("A", "c", 1.0).species("D", "c", 0.0).param("k", 5.0);
+one.mass_action("dimerize", "2 A -> D", "k");
+bio.assert_close(one.ssa(100.0, 2, 7).final("A"), 1.0, 0.0);
+one.set("A", 2.0);
+bio.assert_close(one.ssa(100.0, 2, 7).final("D"), 1.0, 0.0);
+# Birth-death written as mass action has a Poisson stationary law with mean k/g.
+let bd = bio.model("birth_death").compartment("c", 1.0).species("X", "c", 0.0).param("k", 20.0).param("g", 2.0);
+bd.mass_action("make", " -> X", "k").mass_action("lose", "X ->", "g");
+let long = bd.ssa(2000.0, 20001, 99);
+bio.assert_close(long.integral("X") / 2000.0, 10.0, 0.3);
+# Compartment sizes are reachable through get/set and change concentration laws.
+let v = bio.model("volume").compartment("cell", 2.0).species("A", "cell", 1.0).param("k", 1.0).reaction("out", "A ->", "k*A");
+bio.assert_close(v.get("cell"), 2.0, 0.0);
+bio.assert_close(v.simulate(0.0, 1.0, 11).final("A"), pow(2.718281828459045, -0.5), 0.000001);
+v.set("cell", 4.0);
+bio.assert_close(v.get("cell"), 4.0, 0.0);
+bio.assert_close(v.simulate(0.0, 1.0, 11).final("A"), pow(2.718281828459045, -0.25), 0.000001);
+end _dsl_
+savedsl(p, "build/mass_action.dslb");

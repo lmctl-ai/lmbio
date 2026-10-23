@@ -117,7 +117,11 @@ expect_error result_column 'let m = bio.model("bad").compartment("c",1.0).specie
 expect_error assertfail 'bio.assert_close(1.0,2.0,0.1);' "assert_close"
 expect_error nan_assert 'bio.assert_close(sqrt(-1.0),0.0,0.1);' "assert_close"
 expect_error assert_true 'bio.assert_true(false);' "assert_true"
-ok "errors stop with exit 3 and clear messages (15 cases)"
+expect_error never_crosses 'let m = bio.model("bad").compartment("c",1.0).species("A","c",1.0); let x = m.simulate(0.0,1.0,3).crossing("A",2.0);' "never reaches"
+expect_error append_columns 'let a = bio.model("a").compartment("c",1.0).species("A","c",1.0).simulate(0.0,1.0,2); let b = bio.model("b").compartment("c",1.0).species("B","c",1.0).simulate(1.0,2.0,2); let x = a.append(b);' "same columns"
+expect_error mass_action_species 'let m = bio.model("bad").compartment("c",1.0).species("A","c",1.0).mass_action("r","A + Z -> A","1.0");' "unknown species in reaction: Z"
+expect_error compartment_size 'let m = bio.model("bad").compartment("c",1.0).set("c",0.0);' "compartment size"
+ok "errors stop with exit 3 and clear messages (19 cases)"
 
 # Dry run loads/verifies bytecode without executing numerical work or writing CSV.
 rm -f build/examples/biochemical_network.csv

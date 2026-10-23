@@ -17,6 +17,9 @@ struct Species {
 struct Reaction {
   std::string id, equation, rate, reverse;
   std::map<std::string, double> local_params;
+  // Optional stochastic propensities written by Model::mass_action; when empty
+  // ssa() uses rate/reverse as given.
+  std::string ssa_rate = {}, ssa_reverse = {};
 };
 struct Rule {
   std::string target, expression;
@@ -30,6 +33,10 @@ struct Result {
   double final(const std::string &id) const;
   double maximum(const std::string &id) const;
   double time_of_max(const std::string &id) const;
+  double minimum(const std::string &id) const;
+  double integral(const std::string &id) const;
+  double crossing(const std::string &id, double level) const;
+  Result append(const Result &next) const;
   void save_csv(const std::string &path) const;
 };
 struct Model {
@@ -46,6 +53,12 @@ struct Model {
   Model &reaction(const std::string &, const std::string &,
                   const std::string &);
   Model &reversible(const std::string &, const std::string &);
+  Model &mass_action(const std::string &id, const std::string &equation,
+                     const std::string &k);
+  Model &mass_action_reversible(const std::string &id,
+                                const std::string &equation,
+                                const std::string &kf, const std::string &kr);
+  Model &set_state(const Result &);
   Model &rule(const std::string &, const std::string &);
   Model &rate_rule(const std::string &, const std::string &);
   Model &set(const std::string &, double);

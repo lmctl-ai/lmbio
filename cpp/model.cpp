@@ -541,6 +541,65 @@ double Result::time_of_max(const std::string &id) const {
     }
   return value("time", k);
 }
+double Result::minimum(const std::string &id) const {
+  if (!rows)
+    bad("empty result");
+  double x = std::numeric_limits<double>::infinity();
+  for (int i = 0; i < rows; ++i)
+    x = std::min(x, value(id, i));
+  return x;
+}
+double Result::integral(const std::string &id) const {
+  if (!rows)
+    bad("empty result");
+  double sum = 0;
+  for (int i = 1; i < rows; ++i)
+    sum += 0.5 * (value(id, i) + value(id, i - 1)) *
+           (value("time", i) - value("time", i - 1));
+  finite(sum, "integral");
+  return sum;
+}
+double Result::crossing(const std::string &id, double level) const {
+  finite(level, "crossing level");
+  if (!rows)
+    bad("empty result");
+  double previous = value(id, 0);
+  if (previous == level)
+    return value("time", 0);
+  for (int i = 1; i < rows; ++i) {
+    const double now = value(id, i);
+    if (now == level)
+      return value("time", i);
+    if ((previous < level) != (now < level)) {
+      const double t0 = value("time", i - 1), t1 = value("time", i);
+      return t0 + (t1 - t0) * (level - previous) / (now - previous);
+    }
+    previous = now;
+  }
+  bad(id + " never reaches " + std::to_string(level));
+}
+Result Result::append(const Result &next) const {
+  if (columns != next.columns)
+    bad("append needs results with the same columns");
+  if (!rows || !next.rows)
+    bad("empty result");
+  if (next.value("time", 0) < value("time", rows - 1))
+    bad("appended result starts before this result ends");
+  Result r = *this;
+  // A restart that continues exactly where this result stopped repeats the
+  // last row; drop it. A restart after a jump (a dose, a medium change) keeps
+  // both rows at the same time so the step stays visible and integrals exact.
+  const int skip =
+      std::equal(next.data.begin(), next.data.begin() + columns.size(),
+                 data.end() - columns.size())
+          ? 1
+          : 0;
+  r.data.insert(r.data.end(),
+                next.data.begin() + size_t(skip) * columns.size(),
+                next.data.end());
+  r.rows += next.rows - skip;
+  return r;
+}
 void Result::save_csv(const std::string &path) const {
   std::ofstream f(path);
   if (!f)
@@ -600,7 +659,11 @@ Model &Model::reaction(const std::string &id, const std::string &eq,
     bad("duplicate reaction id: " + id);
   if (rate.empty())
     bad("empty reaction rate");
-  reactions.push_back({id, eq, rate, {}, {}});
+  Reaction r;
+  r.id = id;
+  r.equation = eq;
+  r.rate = rate;
+  reactions.push_back(std::move(r));
   return *this;
 }
 Model &Model::reversible(const std::string &id, const std::string &rev) {
@@ -611,6 +674,85 @@ Model &Model::reversible(const std::string &id, const std::string &rev) {
   if (!it->reverse.empty())
     bad("duplicate reverse rate: " + id);
   it->reverse = rev;
+  return *this;
+}
+namespace {
+// Builds the deterministic law k*V*[A]^a*[B]^b (an extent, so a concentration
+// species changes by k*[A]^a*[B]^b per stoichiometric unit) and the matching
+// SSA propensity k*A*(A-1)*...*B*(B-1)*... whose large-count limit has the
+// same mean drift with the same k in unit volume.
+std::pair<std::string, std::string>
+mass_action_laws(const Model &m, const std::map<std::string, double> &side,
+                 const std::map<std::string, double> &other,
+                 const std::string &k) {
+  if (trim(k).empty())
+    bad("empty mass-action rate constant");
+  std::string volume;
+  const auto &anchor = side.empty() ? other : side;
+  if (!anchor.empty()) {
+    for (const auto &sp : m.species_list)
+      if (sp.id == anchor.begin()->first)
+        volume = sp.compartment;
+  } else if (!m.compartments.empty())
+    volume = m.compartments.front().id;
+  std::string ode = "(" + k + ")", ssa = "(" + k + ")";
+  if (!volume.empty())
+    ode += "*" + volume;
+  for (const auto &term : side) {
+    if (!std::any_of(m.species_list.begin(), m.species_list.end(),
+                     [&](const Species &x) { return x.id == term.first; }))
+      bad("unknown species in reaction: " + term.first);
+    std::ostringstream exponent;
+    exponent << std::setprecision(17) << term.second;
+    ode += term.second == 1 ? "*" + term.first
+                            : "*" + term.first + "^" + exponent.str();
+    if (std::floor(term.second) != term.second || term.second > 64)
+      ssa.clear();
+    else if (!ssa.empty())
+      for (int j = 0; j < int(term.second); ++j)
+        ssa += j ? "*(" + term.first + "-" + std::to_string(j) + ")"
+                 : "*" + term.first;
+  }
+  return {ode, ssa};
+}
+} // namespace
+Model &Model::mass_action(const std::string &id, const std::string &eq,
+                          const std::string &k) {
+  const auto st = parse_equation(eq);
+  for (const auto &term : st.right)
+    if (!std::any_of(species_list.begin(), species_list.end(),
+                     [&](const Species &x) { return x.id == term.first; }))
+      bad("unknown species in reaction: " + term.first);
+  auto laws = mass_action_laws(*this, st.left, st.right, k);
+  reaction(id, eq, laws.first);
+  reactions.back().ssa_rate = laws.second;
+  return *this;
+}
+Model &Model::mass_action_reversible(const std::string &id,
+                                     const std::string &eq,
+                                     const std::string &kf,
+                                     const std::string &kr) {
+  mass_action(id, eq, kf);
+  const auto st = parse_equation(eq);
+  auto laws = mass_action_laws(*this, st.right, st.left, kr);
+  reactions.back().reverse = laws.first;
+  reactions.back().ssa_reverse = laws.second;
+  return *this;
+}
+Model &Model::set_state(const Result &r) {
+  if (!r.rows)
+    bad("set_state needs a nonempty result");
+  for (auto &sp : species_list) {
+    double v = r.final(sp.id);
+    if (v < 0 && v > -1e-12 * std::max(1.0, r.maximum(sp.id)))
+      v = 0; // solver round-off below zero
+    finite(v, "state value");
+    if (v < 0)
+      bad("set_state: species " + sp.id + " is negative");
+    sp.initial = v;
+  }
+  for (auto &p : parameters)
+    p.second = r.final(p.first);
   return *this;
 }
 Model &Model::rule(const std::string &id, const std::string &e) {
@@ -633,6 +775,13 @@ Model &Model::set(const std::string &id, double v) {
       s.initial = v;
       return *this;
     }
+  for (auto &c : compartments)
+    if (c.id == id) {
+      if (v <= 0)
+        bad("compartment size must be positive");
+      c.size = v;
+      return *this;
+    }
   bad("unknown symbol: " + id);
 }
 double Model::get(const std::string &id) const {
@@ -642,6 +791,9 @@ double Model::get(const std::string &id) const {
   for (auto &s : species_list)
     if (s.id == id)
       return s.initial;
+  for (auto &c : compartments)
+    if (c.id == id)
+      return c.size;
   bad("unknown symbol: " + id);
 }
 Model &Model::tol(double r, double a) {
@@ -889,6 +1041,20 @@ Result Model::steady_state() const {
 }
 
 Result Model::ssa(double t1, int points, std::uint64_t seed) const {
+  if (std::any_of(reactions.begin(), reactions.end(), [](const Reaction &r) {
+        return !r.ssa_rate.empty() || !r.ssa_reverse.empty();
+      })) {
+    Model stochastic = *this;
+    for (auto &r : stochastic.reactions) {
+      if (!r.ssa_rate.empty())
+        r.rate = r.ssa_rate;
+      if (!r.ssa_reverse.empty())
+        r.reverse = r.ssa_reverse;
+      r.ssa_rate.clear();
+      r.ssa_reverse.clear();
+    }
+    return stochastic.ssa(t1, points, seed);
+  }
   check_grid(*this, 0, t1, points, "ssa");
   Network n = compile(*this);
   if (!rules.empty())
