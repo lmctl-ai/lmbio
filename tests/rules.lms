@@ -1,0 +1,8 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("rules").compartment("cell", 1.0).species("A", "cell", 2.0).species("B", "cell", 0.0).param("k", 0.25).rule("B", "2.0-A").rate_rule("A", "-k*A");
+let r = m.simulate(0.0, 4.0, 41);
+bio.assert_close(r.final("A"), 0.7357589, 0.001);
+bio.assert_close(r.final("B"), 1.2642411, 0.001);
+bio.assert_close(r.final("A") + r.final("B"), 2.0, 0.001);
+end _dsl_
+savedsl(p, "build/rules.dslb");

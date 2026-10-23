@@ -1,0 +1,8 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("immigration_death").compartment("cell", 1.0).species("X", "cell", 0.0).param("birth", 3.0).param("death", 1.0).reaction("immigration", " -> X", "birth").reaction("loss", "X ->", "death*X");
+let r = m.ssa(10.0, 101, 424242);
+bio.assert_true(r.final("X") >= 0.0);
+r.save_csv("build/examples/stochastic.csv");
+end _dsl_
+savedsl(p, "build/stochastic.dslb");
+system ${dsl_cli(p)} --dsl build/stochastic.dslb;

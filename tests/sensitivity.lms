@@ -1,0 +1,6 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("sensitivity").compartment("cell", 1.0).species("A", "cell", 1.0).param("k", 0.0).reaction("decay", "A ->", "k*A");
+let r = m.sensitivity("k", 0.0, 2.0, 21, 0.00001);
+bio.assert_close(r.final("A"), -2.0, 0.01);
+end _dsl_
+savedsl(p, "build/sensitivity.dslb");

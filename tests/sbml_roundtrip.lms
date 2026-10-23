@@ -1,0 +1,14 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.load_sbml("tests/fixtures/roundtrip.xml");
+bio.assert_close(m.get("k"), 0.5, 0.0000001);
+bio.assert_close(m.get("B"), 4.0, 0.0000001);
+let r = m.simulate(0.0, 2.0, 21);
+bio.assert_close(r.final("A"), 0.3678794, 0.001);
+bio.assert_close(r.final("B"), 5.2642411, 0.001);
+bio.assert_close(r.final("sink"), r.final("A") + 1.0, 0.001);
+m.save_sbml("build/roundtrip.xml");
+let n = bio.load_sbml("build/roundtrip.xml");
+let q = n.simulate(0.0, 2.0, 21);
+bio.assert_close(q.final("A"), r.final("A"), 0.001);
+end _dsl_
+savedsl(p, "build/sbml_roundtrip.dslb");

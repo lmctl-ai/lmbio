@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbml xmlns="http://www.sbml.org/sbml/level3/version1/core" level="3" version="1">
+  <model id="roundtrip" name="roundtrip">
+    <listOfCompartments><compartment id="cell" size="2.0"/></listOfCompartments>
+    <listOfSpecies>
+      <species id="A" compartment="cell" initialConcentration="1.0" boundaryCondition="false"/>
+      <species id="B" compartment="cell" initialAmount="4.0" hasOnlySubstanceUnits="true" boundaryCondition="false"/>
+      <species id="sink" compartment="cell" initialConcentration="0.0" boundaryCondition="true"/>
+    </listOfSpecies>
+    <listOfParameters><parameter id="k" value="0.5"/><parameter id="offset" value="1.0"/></listOfParameters>
+    <listOfReactions>
+      <reaction id="decay" reversible="false"><listOfReactants><speciesReference species="A" stoichiometry="1"/></listOfReactants><listOfProducts><speciesReference species="B" stoichiometry="1"/></listOfProducts><kineticLaw><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><times/><ci>k</ci><ci>A</ci></apply></math><listOfLocalParameters><localParameter id="k" value="1.0"/></listOfLocalParameters></kineticLaw></reaction>
+    </listOfReactions>
+    <listOfRules><assignmentRule variable="sink"><math xmlns="http://www.w3.org/1998/Math/MathML"><apply><plus/><ci>A</ci><ci>offset</ci></apply></math></assignmentRule></listOfRules>
+  </model>
+</sbml>

@@ -1,0 +1,9 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("first_order").compartment("cell", 1.0).species("A", "cell", 1.0).species("B", "cell", 0.0).param("k", 0.7).reaction("r", "A -> B", "k*A");
+let r = m.simulate(0.0, 4.0, 41);
+bio.assert_close(r.final("A"), 0.0608100626, 0.00001);
+bio.assert_close(r.final("B"), 0.9391899374, 0.00001);
+bio.assert_close(r.final("A") + r.final("B"), 1.0, 0.00001);
+bio.assert_close(r.value("A", 0), 1.0, 0.0000001);
+end _dsl_
+savedsl(p, "build/first_order.dslb");

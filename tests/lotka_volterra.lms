@@ -1,0 +1,12 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("lotka_volterra").compartment("field", 1.0).species("prey", "field", 10.0).species("pred", "field", 5.0).param("alpha", 1.0).param("beta", 0.1).param("gamma", 1.5).param("delta", 0.075).param("H", 0.0).rule("H", "delta*prey-gamma*log(prey)+beta*pred-alpha*log(pred)").reaction("birth", "prey -> 2 prey", "alpha*prey").reaction("hunt", "prey + pred -> pred", "beta*prey*pred").reaction("death", "pred ->", "gamma*pred").reaction("grow", "prey + pred -> prey + 2 pred", "delta*prey*pred");
+let r = m.simulate(0.0, 2.0, 101);
+bio.assert_true(r.final("prey") > 0.0);
+bio.assert_true(r.final("pred") > 0.0);
+bio.assert_true(r.max("prey") > 10.0);
+let h0 = r.value("H", 0);
+for (i in range(0, r.rows())) {
+  bio.assert_close(r.value("H", i), h0, 0.00001);
+}
+end _dsl_
+savedsl(p, "build/lotka_volterra.dslb");

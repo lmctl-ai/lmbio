@@ -1,0 +1,9 @@
+p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("reversible").compartment("cell", 1.0).species("A", "cell", 1.0).species("B", "cell", 0.0).param("kf", 2.0).param("kr", 1.0).reaction("forward", "A -> B", "kf*A").reversible("forward", "kr*B");
+let r = m.simulate(0.0, 8.0, 81);
+bio.assert_close(r.final("A"), 0.33333334, 0.0001);
+bio.assert_close(r.final("B"), 0.66666666, 0.0001);
+let s = m.steady_state();
+bio.assert_close(s.final("B") / s.final("A"), 2.0, 0.0001);
+end _dsl_
+savedsl(p, "build/reversible.dslb");

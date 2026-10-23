@@ -1,0 +1,277 @@
+{
+  "dsl.schema": 2,
+  "name": "lmbio",
+  "types": {
+    "Bio": {
+      "methods": {
+        "model": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "load_sbml": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "assert_close": [
+          {
+            "params": [
+              "float",
+              "float",
+              "float"
+            ],
+            "returns": "void"
+          }
+        ],
+        "assert_true": [
+          {
+            "params": [
+              "bool"
+            ],
+            "returns": "void"
+          }
+        ],
+        "print": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ]
+      }
+    },
+    "Model": {
+      "methods": {
+        "compartment": [
+          {
+            "params": [
+              "string",
+              "float"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "species": [
+          {
+            "params": [
+              "string",
+              "string",
+              "float"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "param": [
+          {
+            "params": [
+              "string",
+              "float"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "reaction": [
+          {
+            "params": [
+              "string",
+              "string",
+              "string"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "reversible": [
+          {
+            "params": [
+              "string",
+              "string"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "rule": [
+          {
+            "params": [
+              "string",
+              "string"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "rate_rule": [
+          {
+            "params": [
+              "string",
+              "string"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "set": [
+          {
+            "params": [
+              "string",
+              "float"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "get": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "float"
+          }
+        ],
+        "tol": [
+          {
+            "params": [
+              "float",
+              "float"
+            ],
+            "returns": "Model"
+          }
+        ],
+        "validate": [
+          {
+            "params": [],
+            "returns": "Model"
+          }
+        ],
+        "simulate": [
+          {
+            "params": [
+              "float",
+              "float",
+              "int"
+            ],
+            "returns": "Result"
+          }
+        ],
+        "steady_state": [
+          {
+            "params": [],
+            "returns": "Result"
+          }
+        ],
+        "ssa": [
+          {
+            "params": [
+              "float",
+              "int",
+              "int"
+            ],
+            "returns": "Result"
+          }
+        ],
+        "sensitivity": [
+          {
+            "params": [
+              "string",
+              "float",
+              "float",
+              "int",
+              "float"
+            ],
+            "returns": "Result"
+          }
+        ],
+        "save_sbml": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ]
+      }
+    },
+    "Result": {
+      "methods": {
+        "value": [
+          {
+            "params": [
+              "string",
+              "int"
+            ],
+            "returns": "float"
+          }
+        ],
+        "final": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "float"
+          }
+        ],
+        "rows": [
+          {
+            "params": [],
+            "returns": "int"
+          }
+        ],
+        "cols": [
+          {
+            "params": [],
+            "returns": "int"
+          }
+        ],
+        "column": [
+          {
+            "params": [
+              "int"
+            ],
+            "returns": "string"
+          }
+        ],
+        "get": [
+          {
+            "params": [
+              "int",
+              "int"
+            ],
+            "returns": "float"
+          }
+        ],
+        "max": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "float"
+          }
+        ],
+        "time_of_max": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "float"
+          }
+        ],
+        "save_csv": [
+          {
+            "params": [
+              "string"
+            ],
+            "returns": "void"
+          }
+        ]
+      }
+    }
+  },
+  "functions": {},
+  "context": {
+    "bio": "Bio"
+  }
+}
