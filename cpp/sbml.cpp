@@ -1,4 +1,5 @@
 #include "expr.hpp"
+#include "memory_budget.hpp"
 #include "model.hpp"
 
 #include <pugixml.hpp>
@@ -11,6 +12,8 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <new>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -562,12 +565,40 @@ std::string equation(const xml_node &r, bool reverse = false) {
   return out;
 }
 
+// pugixml allocates with malloc by default; route it through the counted operator new so a
+// document (the whole file plus its node tree) is part of the memory budget. pugixml expects
+// nullptr on failure, so a budget failure is kept and rethrown after the call returns.
+std::optional<membudget::Exceeded> xml_exceeded;
+void *xml_allocate(size_t n) {
+  try {
+    return ::operator new(n);
+  } catch (const membudget::Exceeded &e) {
+    xml_exceeded = e;
+  } catch (...) {
+  }
+  return nullptr;
+}
+void xml_deallocate(void *p) { ::operator delete(p); }
+void counted_xml_memory() {
+  pugi::set_memory_management_functions(xml_allocate, xml_deallocate);
+  xml_exceeded.reset();
+}
+void rethrow_xml_budget() {
+  if (xml_exceeded) {
+    membudget::Exceeded e = *xml_exceeded;
+    xml_exceeded.reset();
+    throw e;
+  }
+}
+
 } // namespace
 
 Model load_sbml(const std::string &path) {
+  counted_xml_memory();
   pugi::xml_document d;
   auto res =
       d.load_file(path.c_str(), pugi::parse_default | pugi::parse_declaration);
+  rethrow_xml_budget();
   if (!res)
     bad("cannot read '" + path + "': " + res.description());
   xml_node root;
@@ -790,6 +821,7 @@ Model load_sbml(const std::string &path) {
 
 void save_sbml(const Model &m, const std::string &path) {
   m.validate();
+  counted_xml_memory();
   pugi::xml_document doc;
   auto declaration = doc.append_child(pugi::node_declaration);
   declaration.append_attribute("version") = "1.0";
@@ -938,6 +970,7 @@ void save_sbml(const Model &m, const std::string &path) {
       }
     }
   }
+  rethrow_xml_budget(); // a failed append leaves the document incomplete: never write it
   if (!doc.save_file(path.c_str(), "  ", pugi::format_default,
                      pugi::encoding_utf8))
     bad("cannot write output '" + path + "'");

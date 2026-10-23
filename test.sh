@@ -143,6 +143,66 @@ set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 2 ] || fail "usage exit code $code, expected 2"
 ok "usage and load errors use exit codes 2 and 3"
 
+# Memory budget: a runaway loop stops with a run error (exit 3, message on stderr and in the JSON
+# line) instead of exhausting the machine. A small budget everywhere; on Linux also the default
+# 4096 MiB under a 6 GiB address-space limit (ulimit only here, never in the host). Each Result is
+# 1001 columns x 9990 rows (80 MB); t1 == t0 skips the solver, so the loop only allocates.
+cat >"$WORK/runaway.lms" <<LMS
+p = _dsl_ cli="lmbio";
+let m = bio.model("runaway").compartment("c", 1.0).species("a", "c", 1.0);
+for (j in range(0, 999)) {
+  m = m.param("k" + str(j), 1.0);
+}
+let i = 0;
+while (i < 1000000) {
+  let r = m.simulate(0.0, 0.0, 9990);
+  i = i + 1;
+}
+end _dsl_
+savedsl(p, "$WORK/runaway.dslb");
+LMS
+"$LMSCRIPT" "$WORK/runaway.lms" >/dev/null || fail "runaway.lms compile"
+set +e; out="$(LMBIO_MAX_MEMORY_MB=64 "$HOST" --dsl "$WORK/runaway.dslb" 2>"$WORK/runaway.err")"; code=$?; set -e
+[ "$code" = 3 ] || fail "runaway loop under LMBIO_MAX_MEMORY_MB=64: exit $code, expected 3 ($out)"
+echo "$out" | grep -q "memory budget exceeded" || fail "runaway loop: JSON lacks the budget message: $out"
+grep -q "LMBIO_MAX_MEMORY_MB" "$WORK/runaway.err" || fail "runaway loop: no budget message on stderr"
+set +e; LMBIO_MAX_MEMORY_MB=-5 "$HOST" --dsl "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
+[ "$code" = 2 ] && grep -q "positive whole number" "$WORK/badenv.err" || fail "bad LMBIO_MAX_MEMORY_MB: exit $code"
+# Memory taken outside operator new is counted too: SUNDIALS state is charged before CVODE is
+# created (2000 species: a 31 MiB dense Jacobian plus its saved copy) and pugixml allocates
+# through the counted operator new (a 24 MiB SBML file is read whole).
+cat >"$WORK/wide.lms" <<LMS
+p = _dsl_ cli="lmbio";
+let m = bio.model("wide").compartment("c", 1.0);
+for (j in range(0, 2000)) {
+  m = m.species("s" + str(j), "c", 1.0);
+}
+let r = m.simulate(0.0, 1.0, 2);
+end _dsl_
+savedsl(p, "$WORK/wide.dslb");
+LMS
+"$LMSCRIPT" "$WORK/wide.lms" >/dev/null || fail "wide.lms compile"
+set +e; out="$(LMBIO_MAX_MEMORY_MB=32 "$HOST" --dsl "$WORK/wide.dslb" 2>/dev/null)"; code=$?; set -e
+[ "$code" = 3 ] && echo "$out" | grep -q "memory budget exceeded" || fail "CVODE state over LMBIO_MAX_MEMORY_MB=32: exit $code ($out)"
+python3 -c 'import sys; open(sys.argv[1], "w").write("<?xml version=\"1.0\"?>\n<sbml><!-- " + "x" * (24 << 20) + " --></sbml>\n")' "$WORK/big.xml"
+cat >"$WORK/bigxml.lms" <<LMS
+p = _dsl_ cli="lmbio";
+let m = bio.load_sbml("$WORK/big.xml");
+end _dsl_
+savedsl(p, "$WORK/bigxml.dslb");
+LMS
+"$LMSCRIPT" "$WORK/bigxml.lms" >/dev/null || fail "bigxml.lms compile"
+set +e; out="$(LMBIO_MAX_MEMORY_MB=16 "$HOST" --dsl "$WORK/bigxml.dslb" 2>/dev/null)"; code=$?; set -e
+[ "$code" = 3 ] && echo "$out" | grep -q "memory budget exceeded" || fail "24 MiB SBML over LMBIO_MAX_MEMORY_MB=16: exit $code ($out)"
+rm -f "$WORK/big.xml"
+if [ "$UNAME_S" = Linux ]; then
+  set +e; out="$(ulimit -v 6291456; "$HOST" --dsl "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
+  [ "$code" = 3 ] && echo "$out" | grep -q "limit 4096 MiB" || fail "runaway loop with the default budget under ulimit -v 6 GiB: exit $code ($out)"
+  ok "memory budget: runaway loop stops at 64 MiB and at the default 4096 MiB (under ulimit -v 6 GiB); CVODE state and SBML documents count"
+else
+  ok "memory budget: runaway loop stops at LMBIO_MAX_MEMORY_MB=64 (default-budget run is Linux-only); CVODE state and SBML documents count"
+fi
+
 python3 scripts/check-gallery.py --generated
 ok "gallery links, image signatures, dimensions and byte budgets"
 

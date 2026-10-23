@@ -1,5 +1,6 @@
 #include "model.hpp"
 #include "expr.hpp"
+#include "memory_budget.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -7,6 +8,7 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <optional>
 #include <random>
 #include <set>
 #include <sstream>
@@ -146,13 +148,25 @@ struct Sun {
   }
 };
 
+// SUNDIALS allocates with malloc, outside operator new: charge an upper estimate of what one
+// solve keeps (dense Jacobian, its saved copy, pivots, about 30 state-sized vectors) before
+// creating it, and release it when the solver is freed.
 struct SolverResources {
   N_Vector y = nullptr, scale = nullptr;
   SUNMatrix matrix = nullptr;
   SUNLinearSolver linear = nullptr;
   void *ode = nullptr;
   void *kin = nullptr;
+  std::size_t charged = 0;
+  explicit SolverResources(int q) {
+    const std::size_t n = static_cast<std::size_t>(q);
+    charged = (2 * n * n + 32 * n) * sizeof(double) + 64 * 1024;
+    membudget::charge(charged);
+  }
+  SolverResources(const SolverResources &) = delete;
+  SolverResources &operator=(const SolverResources &) = delete;
   ~SolverResources() {
+    membudget::release(charged);
     if (ode)
       CVodeFree(&ode);
     if (kin)
@@ -398,12 +412,29 @@ std::vector<double> derivatives(const Model &m, const Network &n, double t,
   return dy;
 }
 
+// The callbacks run inside SUNDIALS C frames: no exception may leave them. A budget failure is
+// kept (Exceeded has no heap state) and rethrown after the solver returns.
 struct OdeCtx {
   const Model *m;
   const Network *n;
   int error = 0;
   std::string message;
+  std::optional<membudget::Exceeded> exceeded;
 };
+template <class C> int callback_failed(C *c, const std::exception &e) noexcept {
+  if (auto *x = dynamic_cast<const membudget::Exceeded *>(&e))
+    c->exceeded = *x;
+  try {
+    c->message = e.what();
+  } catch (...) {
+    c->message.clear();
+  }
+  return -1;
+}
+template <class C> void rethrow_budget(const C &c) {
+  if (c.exceeded)
+    throw *c.exceeded;
+}
 int rhs(sunrealtype t, N_Vector y, N_Vector yd, void *u) {
   auto *c = static_cast<OdeCtx *>(u);
   try {
@@ -416,7 +447,9 @@ int rhs(sunrealtype t, N_Vector y, N_Vector yd, void *u) {
     return 0;
   } catch (const std::exception &e) {
     c->error = 1;
-    c->message = e.what();
+    return callback_failed(c, e);
+  } catch (...) {
+    c->error = 1;
     return -1;
   }
 }
@@ -426,6 +459,7 @@ struct KinCtx {
   std::vector<double> base;
   std::vector<int> active;
   std::string message;
+  std::optional<membudget::Exceeded> exceeded;
 };
 int kin_rhs(N_Vector u, N_Vector f, void *user) {
   auto *c = static_cast<KinCtx *>(user);
@@ -438,7 +472,9 @@ int kin_rhs(N_Vector u, N_Vector f, void *user) {
       NV_Ith_S(f, i) = d[c->active[i]];
     return 0;
   } catch (const std::exception &e) {
-    c->message = e.what();
+    return callback_failed(c, e);
+  } catch (...) {
+    c->message = "unknown error";
     return -1;
   }
 }
@@ -452,6 +488,7 @@ Result make_result(const Model &m, const std::vector<double> &times,
     r.columns.push_back(s.id);
   for (auto &p : m.parameters)
     r.columns.push_back(p.first);
+  r.data.reserve(rows.size() * r.columns.size()); // exact size: no doubling slack
   for (size_t i = 0; i < rows.size(); ++i) {
     r.data.push_back(times[i]);
     r.data.insert(r.data.end(), rows[i].begin(), rows[i].end());
@@ -639,7 +676,7 @@ Result Model::simulate(double t0, double t1, int points) const {
     return make_result(*this, times, out);
   }
   Sun sun;
-  SolverResources resource;
+  SolverResources resource(q);
   N_Vector y = resource.y = N_VNew_Serial(q, sun.ctx);
   if (!y)
     bad("cannot allocate CVODE state");
@@ -650,7 +687,7 @@ Result Model::simulate(double t0, double t1, int points) const {
   SUNLinearSolver ls = resource.linear = SUNLinSol_Dense(y, A, sun.ctx);
   if (!mem || !A || !ls)
     bad("CVODE allocation failed");
-  OdeCtx ctx{this, &n, 0, {}};
+  OdeCtx ctx{this, &n, 0, {}, {}};
   if (CVodeInit(mem, rhs, t0, y) != CV_SUCCESS ||
       CVodeSStolerances(mem, rtol, atol) != CV_SUCCESS ||
       CVodeSetUserData(mem, &ctx) != CV_SUCCESS ||
@@ -660,9 +697,11 @@ Result Model::simulate(double t0, double t1, int points) const {
   for (int k = 1; k < points; ++k) {
     times[k] = t0 + (t1 - t0) * (static_cast<double>(k) / (points - 1));
     sunrealtype reached = times[k];
-    if (CVode(mem, times[k], y, &reached, CV_NORMAL) < 0 || ctx.error)
+    if (CVode(mem, times[k], y, &reached, CV_NORMAL) < 0 || ctx.error) {
+      rethrow_budget(ctx);
       bad(ctx.message.empty() ? "CVODE failed"
                               : "CVODE callback: " + ctx.message);
+    }
     for (int j = 0; j < q; ++j) {
       out[k][j] = NV_Ith_S(y, j);
       finite(out[k][j], "simulation value");
@@ -719,9 +758,9 @@ Result Model::steady_state() const {
   auto x = initial;
   bool solved = residual_ok(x);
   if (!solved && !active.empty()) {
-    Sun sun;
-    SolverResources resource;
     int q = static_cast<int>(active.size());
+    Sun sun;
+    SolverResources resource(q);
     N_Vector u = resource.y = N_VNew_Serial(q, sun.ctx);
     N_Vector scale = resource.scale = N_VNew_Serial(q, sun.ctx);
     if (!u || !scale)
@@ -735,7 +774,7 @@ Result Model::steady_state() const {
     SUNLinearSolver ls = resource.linear = SUNLinSol_Dense(u, A, sun.ctx);
     if (!mem || !A || !ls)
       bad("KINSOL allocation failed");
-    KinCtx ctx{this, &n, initial, active, {}};
+    KinCtx ctx{this, &n, initial, active, {}, {}};
     if (KINInit(mem, kin_rhs, u) != KIN_SUCCESS ||
         KINSetUserData(mem, &ctx) != KIN_SUCCESS ||
         KINSetFuncNormTol(mem, atol) != KIN_SUCCESS ||
@@ -743,6 +782,7 @@ Result Model::steady_state() const {
         KINSetNumMaxIters(mem, 200) != KIN_SUCCESS)
       bad("KINSOL setup failed");
     int flag = KINSol(mem, u, KIN_LINESEARCH, scale, scale);
+    rethrow_budget(ctx);
     if (flag >= 0 && ctx.message.empty()) {
       for (int i = 0; i < q; ++i)
         x[active[i]] = NV_Ith_S(u, i);

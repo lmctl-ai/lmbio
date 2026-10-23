@@ -10,3 +10,4 @@
 - [08-open-items.md](08-open-items.md)
 
 - [09-visual-gallery.md](09-visual-gallery.md)
+- [10-resource-limits.md](10-resource-limits.md)

@@ -103,6 +103,13 @@ Requires CMake 3.24+, C++17, git, Python 3, and lmscript for tests (`npm i -g @l
 
 The tests assert first-order decay, reversible equilibrium, mass-action enzyme conservation, Lotka–Volterra invariants, Robertson stiff kinetics, finite-difference sensitivities, stochastic Poisson moments, and SBML round trips. They also check schema/registry/compiler parity, dependency pins, static linking, deterministic CSV, dry run and error codes. All fixtures are original MIT-licensed test data. The upstream SBML Test Suite is LGPL and is not copied into this project; see [license decisions](durable-memory/02-libraries-and-licenses.md).
 
+## Resource limits
+
+A program may use at most 4096 MiB in total (models, results, solver state, SBML documents,
+everything the host keeps); beyond that it stops with a run error (exit 3) naming the limit,
+instead of exhausting the machine. Set `LMBIO_MAX_MEMORY_MB` to change it, e.g.
+`LMBIO_MAX_MEMORY_MB=16384 lmscript scan.lms`.
+
 ## License
 
 Our host and reaction code are [MIT](LICENSE). SUNDIALS 7.2.1 is BSD-3-Clause and pugixml 1.15 is MIT. Their pinned sources live only in ignored `third_party/`. Full notices are embedded in the binary (`lmbio --notices`) and supplied in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES). There is no libSBML, RoadRunner, LLVM, GPL or LGPL scientific dependency.
