@@ -7,4 +7,5 @@ savedsl(p, "build/reversible_balance.dslb");
 r = system ${dsl_cli(p)} --dsl build/reversible_balance.dslb;
 assert(r.code == 0);
 r = system bash examples/render-one.sh reversible_balance;
+println(r.stdout);
 assert(r.code == 0);

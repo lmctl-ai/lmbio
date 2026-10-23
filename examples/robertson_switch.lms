@@ -7,4 +7,5 @@ savedsl(p, "build/robertson_switch.dslb");
 r = system ${dsl_cli(p)} --dsl build/robertson_switch.dslb;
 assert(r.code == 0);
 r = system bash examples/render-one.sh robertson_switch;
+println(r.stdout);
 assert(r.code == 0);

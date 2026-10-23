@@ -7,4 +7,5 @@ savedsl(p, "build/decay_clock.dslb");
 r = system ${dsl_cli(p)} --dsl build/decay_clock.dslb;
 assert(r.code == 0);
 r = system bash examples/render-one.sh decay_clock;
+println(r.stdout);
 assert(r.code == 0);

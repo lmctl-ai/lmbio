@@ -8,4 +8,5 @@ end _dsl_
 savedsl(p, "build/stochastic.dslb");
 system ${dsl_cli(p)} --dsl build/stochastic.dslb;
 r = system bash examples/render-one.sh stochastic;
+println(r.stdout);
 assert(r.code == 0);

@@ -8,4 +8,5 @@ end _dsl_
 savedsl(p, "build/biochemical_network.dslb");
 system ${dsl_cli(p)} --dsl build/biochemical_network.dslb;
 r = system bash examples/render-one.sh biochemical_network;
+println(r.stdout);
 assert(r.code == 0);

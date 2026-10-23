@@ -7,4 +7,5 @@ savedsl(p, "build/predator_prey.dslb");
 r = system ${dsl_cli(p)} --dsl build/predator_prey.dslb;
 assert(r.code == 0);
 r = system bash examples/render-one.sh predator_prey;
+println(r.stdout);
 assert(r.code == 0);

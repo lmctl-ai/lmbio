@@ -7,4 +7,5 @@ savedsl(p, "build/logistic_limit.dslb");
 r = system ${dsl_cli(p)} --dsl build/logistic_limit.dslb;
 assert(r.code == 0);
 r = system bash examples/render-one.sh logistic_limit;
+println(r.stdout);
 assert(r.code == 0);
