@@ -117,7 +117,7 @@ Results contain `time`, species in creation order, then parameters in identifier
 - **No events.** Doses, medium changes and other discontinuities are modelled by restarting a run from the previous end state (see `pk_dosing`); time-dependent inputs can use `min`, `max`, `sign` and `floor` in rate expressions, though such models cannot be exported to SBML.
 - **SSA.** Species values are molecule counts in unit-volume compartments and rate expressions are propensities. Initial counts and stoichiometric coefficients must be nonnegative integers. Hand-written propensities must include combinatorics (`k*X*(X-1)` for `2 X ->`); `mass_action` writes them for you. No rules or explicit time dependence. A seed reproduces a trajectory byte for byte on the same platform; other platforms' math libraries can change it, so examples check statistics, not exact paths. `mass_action` propensities are not stored in SBML; a reloaded model uses its ODE law for SSA.
 - **Sensitivities** are central finite differences of two extra CVODE runs, not CVODES forward sensitivities: pick a step that dominates solver error or tighten `tol()`.
-- Model and result objects live until the host exits; long scans should bound their size.
+- Model and result objects live until the host exits; long scans are bounded by the memory budget under Resource limits.
 
 ## Build and tests
 
