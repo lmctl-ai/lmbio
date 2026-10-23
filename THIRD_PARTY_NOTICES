@@ -112,6 +112,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Platform compiler runtimes are linked under their applicable system licenses,
-including the GCC Runtime Library Exception on GNU platforms. The scientific
-dependencies above and our code have no GPL/LGPL dependency.
+========================================================================
+Platform runtimes linked into the binaries
+========================================================================
+The scientific dependencies above and our code have no GPL/LGPL dependency.
+The platform runtimes below are linked as part of building a static executable.
+
+GCC runtime libraries (Linux and Windows builds: libstdc++, libgcc)
+GNU General Public License v3.0 or later with the GCC Runtime Library
+Exception 3.1, which permits distributing binaries that statically incorporate
+the runtime without GPL obligations for the rest of the program.
+https://www.gnu.org/licenses/gcc-exception-3.1.html
+
+glibc (Linux builds)
+The fully static Linux binaries statically link glibc (LGPL v2.1 or later),
+which permits static linking; source at https://www.gnu.org/software/libc/.
+https://www.gnu.org/licenses/lgpl-2.1.html
+
+MinGW-w64 runtime (Windows builds)
+Windows binaries statically link the MinGW-w64 runtime (permissive licenses,
+see https://www.mingw-w64.org/) and libstdc++/libgcc under the GCC runtime
+exception above.
+
+macOS builds link only the system libSystem and libc++ dynamically.

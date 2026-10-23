@@ -35,14 +35,18 @@ ok "native biochemical regression tests"
 want_version="lmbio $(sed -n 's/^project(lmbio VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
 [ "$("$HOST" --version)" = "$want_version" ] || fail "--version is not exactly '$want_version'"
 ok "--version prints exactly '$want_version'"
-python3 scripts/gen-schema.py >/dev/null && git diff --quiet -- schema/lmbio.dsl.json 2>/dev/null || [ ! -d .git ] || fail "schema/lmbio.dsl.json is stale: run scripts/gen-schema.py"
+cp schema/lmbio.dsl.json "$WORK/schema.committed"
+python3 scripts/gen-schema.py >/dev/null || fail "scripts/gen-schema.py"
+cmp -s "$WORK/schema.committed" schema/lmbio.dsl.json || fail "schema/lmbio.dsl.json is stale: run scripts/gen-schema.py"
 ok "schema matches the registrations in cpp/main.cpp"
 "$HOST" --dsl-schema --json >"$WORK/schema.json" || fail "embedded schema print"
 cmp -s "$WORK/schema.json" schema/lmbio.dsl.json || fail "embedded schema differs from schema/lmbio.dsl.json"
 ok "--dsl-schema --json prints byte-identical embedded schema bytes"
 diff -u <("$LMSCRIPT" --dsl-signatures schema/lmbio.dsl.json) <("$HOST" --dsl-signatures) || fail "host/compiler signatures differ"
 ok "host registry matches compiler signatures"
-"$HOST" --notices | grep -q "SUNDIALS" || fail "--notices missing third-party text"
+"$HOST" --notices >"$WORK/notices.txt" || fail "--notices"
+cmp -s "$WORK/notices.txt" THIRD_PARTY_NOTICES || fail "--notices differs from THIRD_PARTY_NOTICES"
+for name in SUNDIALS pugixml cpp-dsl-sdk glibc MinGW; do grep -q "$name" "$WORK/notices.txt" || fail "--notices lacks $name"; done
 ok "--notices prints the third-party license texts"
 
 case "$UNAME_S" in
@@ -111,10 +115,11 @@ expect_error cycle 'let m = bio.model("bad").compartment("c",1.0).species("A","c
 expect_error negative_propensity 'let m = bio.model("bad").compartment("c",1.0).species("A","c",1.0).reaction("r","A ->","-1"); let r = m.ssa(1.0,2,1);' "propensity"
 expect_error missing_xml 'let m = bio.load_sbml("missing-lmbio.xml");' "SBML"
 expect_error result_index 'let m = bio.model("bad").compartment("c",1.0).species("A","c",1.0); let r = m.simulate(0.0,1.0,2); let x = r.value("A",2);' "row"
+expect_error result_column 'let m = bio.model("bad").compartment("c",1.0).species("A","c",1.0); let r = m.simulate(0.0,1.0,2); let x = r.final("Z");' "unknown result column: Z"
 expect_error assertfail 'bio.assert_close(1.0,2.0,0.1);' "assert_close"
 expect_error nan_assert 'bio.assert_close(sqrt(-1.0),0.0,0.1);' "assert_close"
 expect_error assert_true 'bio.assert_true(false);' "assert_true"
-ok "errors stop with exit 3 and clear messages (14 cases)"
+ok "errors stop with exit 3 and clear messages (15 cases)"
 
 # Dry run loads/verifies bytecode without executing numerical work or writing CSV.
 rm -f build/examples/biochemical_network.csv
