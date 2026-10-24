@@ -116,7 +116,7 @@ SOFTWARE.
 Platform runtimes linked into the binaries
 ========================================================================
 The scientific dependencies above and our code have no GPL/LGPL dependency.
-The platform runtimes below are linked as part of building a static executable.
+The platform runtimes below are linked into or used by the release binaries.
 
 GCC runtime libraries (Linux and Windows builds: libstdc++, libgcc)
 GNU General Public License v3.0 or later with the GCC Runtime Library
@@ -125,8 +125,8 @@ the runtime without GPL obligations for the rest of the program.
 https://www.gnu.org/licenses/gcc-exception-3.1.html
 
 glibc (Linux builds)
-The fully static Linux binaries statically link glibc (LGPL v2.1 or later),
-which permits static linking; source at https://www.gnu.org/software/libc/.
+Linux binaries are dynamically linked to the system glibc (LGPL-2.1 or later,
+dynamic glibc >= 2.35); source at https://www.gnu.org/software/libc/.
 https://www.gnu.org/licenses/lgpl-2.1.html
 
 MinGW-w64 runtime (Windows builds)

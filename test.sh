@@ -50,7 +50,16 @@ for name in SUNDIALS pugixml cpp-dsl-sdk glibc MinGW; do grep -q "$name" "$WORK/
 ok "--notices prints the third-party license texts"
 
 case "$UNAME_S" in
-  Linux) if ldd "$HOST" >/dev/null 2>&1; then fail "executable is dynamically linked"; fi; ok "executable is fully static (no dynamic loader)";;
+  Linux)
+    if command -v readelf >/dev/null 2>&1; then
+      needed="$(readelf -d "$HOST" | sed -n 's/.*(NEEDED).*Shared library: \[\(.*\)\]/\1/p')"
+    else
+      needed="$(ldd "$HOST" | awk '/=>/ {print $1} !/=>/ && /ld-linux/ {sub(/^[[:space:]]*/, ""); sub(/[[:space:]].*/, ""); print $0}' | xargs -n1 basename)"
+    fi
+    [ -n "$needed" ] || fail "expected dynamic glibc linkage on Linux, found no NEEDED entries"
+    bad="$(printf '%s\n' "$needed" | grep -v -E '^(libc\.so\.6|libm\.so\.6|libpthread\.so\.0|libdl\.so\.2|librt\.so\.1|ld-linux.*)' || true)"
+    [ -z "$bad" ] || fail "disallowed Linux dynamic libraries: $bad"
+    ok "Linux binary links only dynamic glibc (${needed//$'\n'/ })";;
   Darwin) bad="$(otool -L "$HOST" | tail -n +2 | grep -v -E '/usr/lib/(libSystem|libc\+\+|libresolv)' || true)"
           [ -z "$bad" ] || fail "non-system dylib dependencies: $bad"; ok "only system libraries linked";;
   MINGW*|MSYS*|CYGWIN*)

@@ -58,7 +58,7 @@ mkdir try-lmbio && cd try-lmbio
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/toggle_switch.lms
 ```
 
-The run downloads the lmbio, lmplot and lmdraw release binaries on first use, computes, checks, and prints `wrote images/toggle_switch.png`. Intermediate CSV files land in `build/examples/`. The animated examples also write a GIF when `ffmpeg` is on PATH (otherwise they print `SKIP` and keep the frames in `build/`).
+The run downloads the lmbio, lmplot and lmdraw release binaries on first use (Linux binaries require dynamic glibc >= 2.35, Ubuntu 22.04+), computes, checks, and prints `wrote images/toggle_switch.png`. Intermediate CSV files land in `build/examples/`. The animated examples also write a GIF when `ffmpeg` is on PATH (otherwise they print `SKIP` and keep the frames in `build/`).
 
 If an unrelated program called `lmbio` is already on your PATH, lmscript picks it first and stops with `unexpected argument '--dsl-schema'`. Remove it from PATH or put this host's directory first; the host must answer `lmbio --dsl-schema --json`.
 
@@ -133,9 +133,9 @@ cmake --build build --parallel 4
 examples/render-all.sh   # regenerate docs/images (network for lmplot/lmdraw; ffmpeg for GIFs)
 ```
 
-Requires CMake 3.24+, C++17, git, Python 3, and lmscript for tests (`npm i -g @lmctl-ai/lmctl@0.2.369` or later). Linux releases are fully static; macOS uses only system libraries; Windows statically links MinGW runtimes. No external runtime data is required.
+Requires CMake 3.24+, C++17, git, Python 3, and lmscript for tests (`npm i -g @lmctl-ai/lmctl@0.2.369` or later). Linux releases link all scientific libraries and `libstdc++`/`libgcc` statically and use only dynamic glibc (>= 2.35); macOS uses only system libraries; Windows statically links MinGW runtimes. No external runtime data is required.
 
-`test.sh` builds the host, runs the native regression tests (first-order decay, reversible equilibrium, mass-action enzyme conservation, Lotka-Volterra invariants, Robertson stiff kinetics, finite-difference sensitivities, stochastic Poisson moments, SBML round trips, mass-action propensities, dosing restarts), runs every example with its own known-answer assertions, checks that result files are byte-identical on rerun, and checks schema/registry/compiler parity, dependency pins, static linking, error codes and the gallery (sources, PNG/GIF signatures, sizes). All fixtures are original MIT-licensed test data.
+`test.sh` builds the host, runs the native regression tests (first-order decay, reversible equilibrium, mass-action enzyme conservation, Lotka-Volterra invariants, Robertson stiff kinetics, finite-difference sensitivities, stochastic Poisson moments, SBML round trips, mass-action propensities, dosing restarts), runs every example with its own known-answer assertions, checks that result files are byte-identical on rerun, and checks schema/registry/compiler parity, dependency pins, runtime linkage, error codes and the gallery (sources, PNG/GIF signatures, sizes). All fixtures are original MIT-licensed test data.
 
 ## Resource limits
 
@@ -146,4 +146,4 @@ instead of exhausting the machine. Set `LMBIO_MAX_MEMORY_MB` to change it, e.g.
 
 ## License
 
-Our host and reaction code are [MIT](LICENSE). SUNDIALS 7.2.1 is BSD-3-Clause and pugixml 1.15 is MIT. Their pinned sources live only in ignored `third_party/`. Full notices are embedded in the binary (`lmbio --notices`) and supplied in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES), including the statically linked toolchain runtimes. There is no libSBML, RoadRunner, LLVM, GPL or LGPL scientific dependency; see [license decisions](durable-memory/02-libraries-and-licenses.md). The figures are drawn by [lmplot](https://github.com/lmctl-ai/lmplot) and [lmdraw](https://github.com/lmctl-ai/lmdraw), installed separately at run time.
+Our host and reaction code are [MIT](LICENSE). SUNDIALS 7.2.1 is BSD-3-Clause and pugixml 1.15 is MIT. Their pinned sources live only in ignored `third_party/`. Full notices are embedded in the binary (`lmbio --notices`) and supplied in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES), including the toolchain runtimes (static `libstdc++`/`libgcc` and MinGW, dynamic system glibc >= 2.35 on Linux). There is no libSBML, RoadRunner, LLVM, GPL or LGPL scientific dependency; see [license decisions](durable-memory/02-libraries-and-licenses.md). The figures are drawn by [lmplot](https://github.com/lmctl-ai/lmplot) and [lmdraw](https://github.com/lmctl-ai/lmdraw), installed separately at run time.
