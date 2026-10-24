@@ -46,7 +46,7 @@ diff -u <("$LMSCRIPT" --dsl-signatures schema/lmbio.dsl.json) <("$HOST" --dsl-si
 ok "host registry matches compiler signatures"
 "$HOST" --notices >"$WORK/notices.txt" || fail "--notices"
 cmp -s "$WORK/notices.txt" THIRD_PARTY_NOTICES || fail "--notices differs from THIRD_PARTY_NOTICES"
-for name in SUNDIALS pugixml cpp-dsl-sdk glibc MinGW; do grep -q "$name" "$WORK/notices.txt" || fail "--notices lacks $name"; done
+for name in SUNDIALS pugixml lmcode-cpp glibc MinGW; do grep -q "$name" "$WORK/notices.txt" || fail "--notices lacks $name"; done
 ok "--notices prints the third-party license texts"
 
 case "$UNAME_S" in

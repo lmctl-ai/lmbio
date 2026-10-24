@@ -88,7 +88,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 ========================================================================
-cpp-dsl-sdk and adapted lmnum expression compiler (MIT)
+lmcode-cpp and adapted lmnum expression compiler (MIT)
 ========================================================================
 MIT License
 
