@@ -12,3 +12,5 @@ Run scripts/sync-deps.sh, cmake -S . -B build, cmake --build build --parallel 4,
 - Native tests are always active under NDEBUG. AddressSanitizer/UndefinedBehaviorSanitizer and leak detection pass. Clang static analysis of model/SBML sources, shellcheck and Python compilation pass.
 
 Tests and examples are original MIT material. The GPL/LGPL upstream SBML conformance suite is not fetched or shipped, and passing it is not claimed. tests/fixtures are authored XML models; generated XML and bytecode use build/ or temporary directories. Zero-duration deterministic trajectories, output-grid-independent stochastic paths, unsupported MathML, namespaces and failed solver calls have regressions.
+
+Compiler pins/minimum are 0.2.420; the complete pinned SDK registers std by default while the unchanged biochemical schema stays host-only, with effective and `--without-std` parity checks.

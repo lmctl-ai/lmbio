@@ -44,6 +44,21 @@ cmp -s "$WORK/schema.json" schema/lmbio.dsl.json || fail "embedded schema differ
 ok "--dsl-schema --json prints byte-identical embedded schema bytes"
 diff -u <("$LMSCRIPT" --dsl-signatures schema/lmbio.dsl.json) <("$HOST" --dsl-signatures) || fail "host/compiler signatures differ"
 ok "host registry matches compiler signatures"
+python3 scripts/merge-std.py --host-only schema/lmbio.dsl.json "$WORK/host-only-schema.json"
+cmp schema/lmbio.dsl.json "$WORK/host-only-schema.json" || fail "host schema declares standard members"
+"$HOST" --dsl-signatures >"$WORK/registry-signatures.txt"
+"$LMSCRIPT" --dsl-signatures cpp/std/lmcode-std.schema.json >"$WORK/standard-signatures.txt"
+python3 - "$WORK" <<'PYHOST'
+from pathlib import Path
+import sys
+work=Path(sys.argv[1])
+registry=set((work/'registry-signatures.txt').read_text().splitlines())
+standard=set((work/'standard-signatures.txt').read_text().splitlines())
+assert len(standard)==72, len(standard)
+(work/'host-signatures.txt').write_bytes(''.join(line+'\n' for line in sorted(registry-standard)).encode('utf-8'))
+PYHOST
+diff -u <("$LMSCRIPT" --dsl-signatures schema/lmbio.dsl.json --without-std) "$WORK/host-signatures.txt" || fail "host-only registry/compiler signatures differ"
+ok "host-only schema and implicit standard registry surfaces agree"
 "$HOST" --notices >"$WORK/notices.txt" || fail "--notices"
 cmp -s "$WORK/notices.txt" THIRD_PARTY_NOTICES || fail "--notices differs from THIRD_PARTY_NOTICES"
 for name in SUNDIALS pugixml lmcode-cpp glibc MinGW; do grep -q "$name" "$WORK/notices.txt" || fail "--notices lacks $name"; done

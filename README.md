@@ -133,7 +133,7 @@ cmake --build build --parallel 4
 examples/render-all.sh   # regenerate docs/images (network for lmplot/lmdraw; ffmpeg for GIFs)
 ```
 
-Requires CMake 3.24+, C++17, git, Python 3, and lmscript for tests (`npm i -g @lmctl-ai/lmctl@0.2.419` or later). Linux releases link all scientific libraries and `libstdc++`/`libgcc` statically and use only dynamic glibc (>= 2.35); macOS uses only system libraries; Windows statically links MinGW runtimes. No external runtime data is required.
+Requires CMake 3.24+, C++17, git, Python 3, and lmscript for tests (`npm i -g @lmctl-ai/lmctl@0.2.420` or later). Linux releases link all scientific libraries and `libstdc++`/`libgcc` statically and use only dynamic glibc (>= 2.35); macOS uses only system libraries; Windows statically links MinGW runtimes. No external runtime data is required.
 
 `test.sh` builds the host, runs the native regression tests (first-order decay, reversible equilibrium, mass-action enzyme conservation, Lotka-Volterra invariants, Robertson stiff kinetics, finite-difference sensitivities, stochastic Poisson moments, SBML round trips, mass-action propensities, dosing restarts), runs every example with its own known-answer assertions, checks that result files are byte-identical on rerun, and checks schema/registry/compiler parity, dependency pins, runtime linkage, error codes and the gallery (sources, PNG/GIF signatures, sizes). All fixtures are original MIT-licensed test data.
 
