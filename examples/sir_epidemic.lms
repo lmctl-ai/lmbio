@@ -3,7 +3,7 @@
 # final-size relation S_inf = S0 exp(-R0 (1 - S_inf)), and it always overshoots the
 # herd-immunity threshold 1 - 1/R0.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("sir").compartment("population", 1.0).species("S", "population", 0.9999).species("I", "population", 0.0001).species("R", "population", 0.0);
 m.param("beta", 0.2).param("gamma", 0.1);
 m.reaction("infection", "S + I -> 2 I", "beta*S*I").reaction("recovery", "I -> R", "gamma*I");
@@ -24,7 +24,7 @@ for (i in range(0, 8)) {
     run.save_csv("build/examples/sir_epidemic_" + str(i) + ".csv");
   }
 }
-end _dsl_
+end _lmcode_
 savedsl(p, "build/sir_epidemic.dslb");
 r = system ${dsl_cli(p)} --dsl build/sir_epidemic.dslb;
 assert(r.code == 0);
@@ -35,7 +35,7 @@ for (line in split(r.stdout, "\n")) {
 write_file("build/examples/sir_epidemic_sizes.csv", csv);
 
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/sir_epidemic.png", 960, 540);
 plot.cmd("set datafile separator ','");
 plot.cmd("set multiplot layout 1,2 title 'Epidemic final size: higher R0, faster and larger outbreaks' font ',14'");
@@ -54,7 +54,7 @@ plot.cmd("plot -log(1-t)/t, t with lines lw 3 lc rgb '#df6b38' title 'Final-size
 plot.cmd("unset parametric");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v, "build/sir_epidemic-plot.dslb");
 r = system ${dsl_cli(v)} --dsl build/sir_epidemic-plot.dslb;
 assert(r.code == 0);

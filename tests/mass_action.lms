@@ -1,4 +1,4 @@
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 # Deterministic law: 2 A -> D gives d[A]/dt = -2 k [A]^2 in any volume, so A(t) = A0/(1 + 2 k A0 t).
 let m = bio.model("dimer").compartment("cell", 2.0).species("A", "cell", 1.0).species("D", "cell", 0.0).param("k", 0.5);
 m.mass_action("dimerize", "2 A -> D", "k");
@@ -28,5 +28,5 @@ bio.assert_close(v.simulate(0.0, 1.0, 11).final("A"), pow(2.718281828459045, -0.
 v.set("cell", 4.0);
 bio.assert_close(v.get("cell"), 4.0, 0.0);
 bio.assert_close(v.simulate(0.0, 1.0, 11).final("A"), pow(2.718281828459045, -0.25), 0.000001);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/mass_action.dslb");

@@ -5,7 +5,7 @@
 # lmbio finds the steady state numerically and checks it; lmdraw draws both flux maps, arrow
 # width proportional to flux.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("branch").compartment("cell", 1.0);
 m.species("A", "cell", 0.0).species("B", "cell", 0.0).species("P1", "cell", 0.0).species("P2", "cell", 0.0);
 m.param("v0", 10.0).param("Ki", 1.0).param("k1", 1.0).param("k2", 2.0).param("k3", 0.5).param("d1", 1.0).param("d2", 1.0);
@@ -27,7 +27,7 @@ for (k in range(0, 2)) {
   bio.assert_close(d1 * s.final("P1"), j1, 0.000001);
   bio.print("flux," + str(k) + "," + str(j0) + "," + str(j1) + "," + str(j2) + "," + str(s.final("A")) + "," + str(s.final("B")) + "," + str(s.final("P1")) + "," + str(s.final("P2")));
 }
-end _dsl_
+end _lmcode_
 savedsl(p, "build/feedback_inhibition.dslb");
 r = system ${dsl_cli(p)} --dsl build/feedback_inhibition.dslb;
 assert(r.code == 0);
@@ -63,7 +63,7 @@ foot = "Supply drops " + ratio + "x when P1 is no longer used: the cell stops ma
 
 mkdir("images");
 mkdir("build/rendered");
-d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+d = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 540, "#ffffff");
 scene.text(36.0, 48.0, 24.0, "Feedback inhibition: a pathway makes only what is used", "#1d2733").set_attr("font-weight", "700");
 scene.text(36.0, 76.0, 15.0, "Steady-state flux maps from lmbio; arrow width is proportional to flux, node labels are concentrations.", "#5a6672");
@@ -120,7 +120,7 @@ for (panel in range(0, 2)) {
 }
 scene.text(36.0, 506.0, 14.0, ${foot}, "#1d2733", 890.0);
 scene.render_png("build/rendered/feedback_inhibition.png", 960, 540, 1);
-end _dsl_
+end _lmcode_
 savedsl(d, "build/feedback_inhibition-draw.dslb");
 r = system ${dsl_cli(d)} --dsl build/feedback_inhibition-draw.dslb;
 assert(r.code == 0);

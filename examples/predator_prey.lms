@@ -1,15 +1,15 @@
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m=bio.model("ecology").compartment("v",1.0).species("prey","v",10.0).species("pred","v",5.0).reaction("birth","prey -> 2 prey","prey").reaction("hunt","prey + pred -> 2 pred","0.1*prey*pred").reaction("death","pred ->","pred");
 let r=m.simulate(0.0,20.0,401);bio.assert_true(r.final("prey")>0.0);r.save_csv("build/examples/predator_prey.csv");
-end _dsl_
+end _lmcode_
 savedsl(p, "build/predator_prey.dslb");
 r = system ${dsl_cli(p)} --dsl build/predator_prey.dslb;
 assert(r.code == 0);
 
 mkdir("build/visual");
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/predator_prey.png",900,520);
 plot.cmd("set datafile separator ','");
 plot.cmd("set border 3");
@@ -25,7 +25,7 @@ plot.cmd("set ylabel 'Population (model units)'");
 plot.cmd("set yrange [4:21]");
 plot.cmd("plot 'build/examples/predator_prey.csv' using 1:2 with lines ls 1 title 'Prey', '' using 1:3 with lines ls 2 title 'Predators'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v,"build/visual/predator_prey.dslb");
 r = system ${dsl_cli(v)} --dsl build/visual/predator_prey.dslb;
 assert(r.code==0);

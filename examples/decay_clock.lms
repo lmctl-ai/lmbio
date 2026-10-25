@@ -1,15 +1,15 @@
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m=bio.model("decay").compartment("v",1.0).species("A","v",1.0).param("k",0.7).reaction("loss","A ->","k*A");
 let r=m.simulate(0.0,6.0,121);bio.assert_close(r.final("A"),0.01499557682,0.00001);r.save_csv("build/examples/decay_clock.csv");
-end _dsl_
+end _lmcode_
 savedsl(p, "build/decay_clock.dslb");
 r = system ${dsl_cli(p)} --dsl build/decay_clock.dslb;
 assert(r.code == 0);
 
 mkdir("build/visual");
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/decay_clock.png",900,520);
 plot.cmd("set datafile separator ','");
 plot.cmd("set border 3");
@@ -32,7 +32,7 @@ plot.cmd("set arrow 1 from graph "+str(float(k)/23.0)+",0 to graph "+str(float(k
 plot.cmd("replot");
 plot.close();
 }
-end _dsl_
+end _lmcode_
 savedsl(v,"build/visual/decay_clock.dslb");
 r = system ${dsl_cli(v)} --dsl build/visual/decay_clock.dslb;
 assert(r.code==0);

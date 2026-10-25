@@ -3,7 +3,7 @@
 # second and then tracks the slow conversion of A into C for a hundred thousand time units.
 # CVODE's BDF method covers 1e-6 .. 1e5 in decade segments; the reference value A(40) = 0.715827.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m=bio.model("robertson").compartment("v",1.0).species("A","v",1.0).species("B","v",0.0).species("C","v",0.0).reaction("f","A -> B","0.04*A").reaction("r","B + C -> A + C","10000*B*C").reaction("sink","2 B -> B + C","30000000*B*B");
 m.tol(0.000000001, 0.000000000001);
 let r=m.simulate(0.0,40.0,401);bio.assert_close(r.final("A"),0.715827,0.0001);r.save_csv("build/examples/robertson_switch.csv");
@@ -21,13 +21,13 @@ for (k in range(0, 12)) {
 }
 bio.assert_close(peak, 0.0000365, 0.0000005);
 bio.assert_true(m.get("C") > 0.97);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/robertson_switch.dslb");
 r = system ${dsl_cli(p)} --dsl build/robertson_switch.dslb;
 assert(r.code == 0);
 
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/robertson_switch.png", 960, 540);
 plot.cmd("set datafile separator ','");
 plot.cmd("set border 3; set tics nomirror; set grid back lc rgb '#e4e9ef'");
@@ -39,7 +39,7 @@ plot.cmd("set label 1 'B rises within 1e-3 time units,' at 2e-6,0.56 tc rgb '#58
 plot.cmd("set label 2 'then decays as A runs out' at 2e-6,0.51 tc rgb '#5864a8'");
 plot.cmd("plot for [k=0:11] sprintf('build/examples/robertson_switch_%d.csv', k) using 1:2 with lines lw 3 lc rgb '#007f86' title (k==0 ? 'A (reactant)' : ''), for [k=0:11] sprintf('build/examples/robertson_switch_%d.csv', k) using 1:($3*1e4) with lines lw 3 lc rgb '#5864a8' title (k==0 ? 'B x 10^4 (fast intermediate)' : ''), for [k=0:11] sprintf('build/examples/robertson_switch_%d.csv', k) using 1:4 with lines lw 3 lc rgb '#df6b38' title (k==0 ? 'C (product)' : '')");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v, "build/robertson_switch-plot.dslb");
 r = system ${dsl_cli(v)} --dsl build/robertson_switch-plot.dslb;
 assert(r.code == 0);

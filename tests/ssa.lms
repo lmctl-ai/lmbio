@@ -1,9 +1,9 @@
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("immigration_death").compartment("cell", 1.0).species("X", "cell", 0.0).param("birth", 3.0).param("death", 1.0).reaction("immigration", " -> X", "birth").reaction("loss", "X ->", "death*X");
 let a = m.ssa(20.0, 201, 424242);
 let b = m.ssa(20.0, 201, 424242);
 bio.assert_close(a.final("X"), b.final("X"), 0.0);
 bio.assert_true(a.final("X") >= 0.0);
 bio.assert_true(a.max("X") >= a.final("X"));
-end _dsl_
+end _lmcode_
 savedsl(p, "build/ssa.dslb");

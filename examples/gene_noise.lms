@@ -4,7 +4,7 @@
 # same mean but Fano factor 1 + b * gm / (gm + gp) = 5.55 (Thattai and van Oudenaarden 2001).
 # Gillespie SSA checks both against the formulas; the ODE predicts only the mean.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let direct = bio.model("birth_death").compartment("cell", 1.0).species("P", "cell", 0.0).param("k", 10.0).param("g", 1.0);
 direct.reaction("make", " -> P", "k").reaction("decay", "P ->", "g*P");
 let ode = direct.simulate(0.0, 8.0, 161);
@@ -45,7 +45,7 @@ let bfano = (bsq / 79001.0 - bmean * bmean) / bmean;
 bio.assert_close(bmean, 10.0, 0.5);
 bio.assert_close(bfano, 1.0 + 5.0 * 1.0 / 1.1, 0.6);
 bio.print("stats," + str(mean) + "," + str(fano) + "," + str(bmean) + "," + str(bfano));
-end _dsl_
+end _lmcode_
 savedsl(p, "build/gene_noise.dslb");
 r = system ${dsl_cli(p)} --dsl build/gene_noise.dslb;
 assert(r.code == 0);
@@ -62,7 +62,7 @@ key_direct = "Direct: Fano " + fd + " (theory 1)";
 key_bursty = "Bursty: Fano " + fb + " (theory 5.55)";
 
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/gene_noise.png", 960, 540);
 plot.cmd("set datafile separator ','");
 plot.cmd("set multiplot layout 1,2 title 'Gene-expression noise: same average, very different cells' font ',14'");
@@ -83,7 +83,7 @@ plot.cmd("set samples 41");
 plot.cmd(${"plot 'build/examples/gene_noise_direct.csv' every ::1000 using 2:(1.0/49001) smooth frequency with boxes lc rgb '#007f86' title '" + key_direct + "', 'build/examples/gene_noise_bursty.csv' every ::1000 using 3:(1.0/79001) smooth frequency with boxes lc rgb '#df6b38' title '" + key_bursty + "', [0:40] '+' using 1:(pois($1)) with linespoints lw 2 pt 7 ps 0.6 lc rgb '#1d2733' title 'Poisson(10)'"});
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v, "build/gene_noise-plot.dslb");
 r = system ${dsl_cli(v)} --dsl build/gene_noise-plot.dslb;
 assert(r.code == 0);

@@ -1,15 +1,15 @@
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m=bio.model("logistic").compartment("v",1.0).species("N","v",1.0).reaction("growth","N -> 2 N","0.8*N").reaction("crowd","N ->","0.008*N*N");
 let r=m.simulate(0.0,15.0,301);bio.assert_close(r.final("N"),99.93921,0.001);r.save_csv("build/examples/logistic_limit.csv");
-end _dsl_
+end _lmcode_
 savedsl(p, "build/logistic_limit.dslb");
 r = system ${dsl_cli(p)} --dsl build/logistic_limit.dslb;
 assert(r.code == 0);
 
 mkdir("build/visual");
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/logistic_limit.png",900,520);
 plot.cmd("set datafile separator ','");
 plot.cmd("set border 3");
@@ -25,7 +25,7 @@ plot.cmd("set ylabel 'Population (model units)'");
 plot.cmd("set xrange [0:15]");
 plot.cmd("plot 'build/examples/logistic_limit.csv' using 1:2 with lines ls 1 title 'Population', 100 with lines ls 2 dt 2 title 'Carrying capacity'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v,"build/visual/logistic_limit.dslb");
 r = system ${dsl_cli(v)} --dsl build/visual/logistic_limit.dslb;
 assert(r.code==0);

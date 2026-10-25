@@ -3,7 +3,7 @@
 # circuit is bistable: two stable states and a saddle at exactly (2, 2), because 2 = 10/(1 + 2^2).
 # lmbio integrates 22 starting points; lmdraw draws the circuit next to the phase portrait.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("toggle").compartment("cell", 1.0).species("U", "cell", 0.0).species("V", "cell", 0.0).param("a", 10.0);
 m.reaction("make_U", " -> U", "a/(1 + V^2)").reaction("dilute_U", "U ->", "U");
 m.reaction("make_V", " -> V", "a/(1 + U^2)").reaction("dilute_V", "V ->", "V");
@@ -39,7 +39,7 @@ for (k in range(0, 22)) {
   if (k >= 20) { bio.assert_close(run.final("U"), 2.0, 0.001); }
   run.save_csv("build/examples/toggle_switch_" + str(k) + ".csv");
 }
-end _dsl_
+end _lmcode_
 savedsl(p, "build/toggle_switch.dslb");
 r = system ${dsl_cli(p)} --dsl build/toggle_switch.dslb;
 assert(r.code == 0);
@@ -105,7 +105,7 @@ sy = Y(2.0);
 
 mkdir("images");
 mkdir("build/rendered");
-d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+d = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 540, "#ffffff");
 scene.text(36.0, 48.0, 24.0, "Genetic toggle switch: one circuit, two memories", "#1d2733").set_attr("font-weight", "700");
 scene.text(36.0, 76.0, 15.0, "Two repressors shut each other off; a transient push decides which one stays on.", "#5a6672");
@@ -149,7 +149,7 @@ scene.text(${F(hx - 6.0)}, ${F(hy - 26.0)}, 13.0, "U-on", "#00545a").set_attr("t
 scene.text(${F(lx + 14.0)}, ${F(ly + 4.0)}, 13.0, "V-on", "#3a4378");
 scene.text(${F(sx + 12.0)}, ${F(sy - 10.0)}, 13.0, "saddle", "#1d2733");
 scene.render_png("build/rendered/toggle_switch.png", 960, 540, 1);
-end _dsl_
+end _lmcode_
 savedsl(d, "build/toggle_switch-draw.dslb");
 r = system ${dsl_cli(d)} --dsl build/toggle_switch-draw.dslb;
 assert(r.code == 0);

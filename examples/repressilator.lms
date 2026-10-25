@@ -3,7 +3,7 @@
 # about 8.7 mRNA lifetimes, each protein a third of a cycle behind the one that represses it.
 # With n = 1 the same ring damps to a steady state. lmbio integrates both; lmdraw animates the ring.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("repressilator").compartment("cell", 1.0);
 m.species("m1", "cell", 1.0).species("m2", "cell", 0.0).species("m3", "cell", 0.0);
 m.species("p1", "cell", 0.0).species("p2", "cell", 0.0).species("p3", "cell", 0.0);
@@ -50,7 +50,7 @@ for (i in range(1200, 1601)) {
 }
 bio.assert_true(spread < 0.01);
 bio.print("period," + str(period) + "," + str(first) + "," + str(top) + "," + str(flat.final("p1")));
-end _dsl_
+end _lmcode_
 savedsl(p, "build/repressilator.dslb");
 r = system ${dsl_cli(p)} --dsl build/repressilator.dslb;
 assert(r.code == 0);
@@ -135,7 +135,7 @@ for (f in range(0, frames)) {
   o2 = str(R1(0.12 + 0.88 * min(1.0, v2 / top)));
   o3 = str(R1(0.12 + 0.88 * min(1.0, v3 / top)));
   out = "build/rendered/repressilator-frame-" + str(f) + ".png";
-  d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+  d = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(960, 540, "#ffffff");
 scene.text(36.0, 48.0, 24.0, "The repressilator: a ring of three repressors keeps time", "#1d2733").set_attr("font-weight", "700");
 scene.text(36.0, 76.0, 15.0, ${period_text}, "#5a6672");
@@ -177,7 +177,7 @@ scene.circle(${F(PX(t))}, ${F(PY(v1))}, 6.0, "#007f86");
 scene.circle(${F(PX(t))}, ${F(PY(v2))}, 6.0, "#df6b38");
 scene.circle(${F(PX(t))}, ${F(PY(v3))}, 6.0, "#5864a8");
 scene.render_png(${out}, 960, 540, 1);
-end _dsl_
+end _lmcode_
   savedsl(d, "build/repressilator-draw.dslb");
   r = system ${dsl_cli(d)} --dsl build/repressilator-draw.dslb;
   assert(r.code == 0);

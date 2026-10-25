@@ -1,4 +1,4 @@
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 # Repeated bolus doses by restarting from a result: C(t) is a sum of exponentials.
 let m = bio.model("bolus").compartment("plasma", 1.0).species("C", "plasma", 1.0).param("k", 0.5).reaction("clear", "C ->", "k*C");
 let first = m.simulate(0.0, 2.0, 41);
@@ -25,5 +25,5 @@ quiet.set_state(part);
 let joined = part.append(quiet.simulate(1.0, 2.0, 11));
 bio.assert_true(joined.rows() == 21);
 bio.assert_close(joined.final("A"), pow(2.718281828459045, -2.0), 0.000001);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/dosing.dslb");

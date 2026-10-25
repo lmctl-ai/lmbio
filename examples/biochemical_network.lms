@@ -1,10 +1,10 @@
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("enzyme").compartment("cell", 1.0).species("S", "cell", 10.0).species("E", "cell", 1.0).species("ES", "cell", 0.0).species("P", "cell", 0.0).param("kf", 2.0).param("kr", 1.0).param("kc", 0.5).reaction("bind", "S + E -> ES", "kf*S*E").reversible("bind", "kr*ES").reaction("cat", "ES -> E + P", "kc*ES");
 let r = m.simulate(0.0, 20.0, 201);
 bio.assert_close(r.final("S") + r.final("ES") + r.final("P"), 10.0, 0.001);
 r.save_csv("build/examples/biochemical_network.csv");
-end _dsl_
+end _lmcode_
 savedsl(p, "build/biochemical_network.dslb");
 r = system ${dsl_cli(p)} --dsl build/biochemical_network.dslb;
 if (r.code!=0) { println(r.stdout); println(r.stderr); }
@@ -12,7 +12,7 @@ assert(r.code==0);
 
 mkdir("build/visual");
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/biochemical_network.png",900,520);
 plot.cmd("set datafile separator ','");
 plot.cmd("set border 3");
@@ -27,7 +27,7 @@ plot.cmd("set xlabel 'Time (model units)'");
 plot.cmd("set ylabel 'Concentration'");
 plot.cmd("plot 'build/examples/biochemical_network.csv' using 1:2 with lines ls 1 title 'Substrate', '' using 1:4 with lines ls 3 title 'Complex', '' using 1:5 with lines ls 2 title 'Product'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v,"build/visual/biochemical_network.dslb");
 r = system ${dsl_cli(v)} --dsl build/visual/biochemical_network.dslb;
 assert(r.code==0);

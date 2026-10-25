@@ -4,7 +4,7 @@
 # the SAME steady level, gets there faster; for strong repression x^3 = 1 - exp(-3t), so the
 # half-rise time tends to ln(8/7)/3 = 0.0445 and the speed-up to 15.6.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("autoregulation").compartment("cell", 1.0).species("X", "cell", 0.0).param("b", 1.0).param("K", 1.0).param("feedback", 0.0);
 # feedback = 0: constant production b; feedback = 1: production b/(1 + (X/K)^2)
 m.reaction("make", " -> X", "b*(1 - feedback) + feedback*b/(1 + (X/K)^2)").reaction("dilute", "X ->", "X");
@@ -33,7 +33,7 @@ for (j in range(0, 13)) {
   }
   if (j == 11) { bio.assert_close(half, 0.044510, 0.0015); }
 }
-end _dsl_
+end _lmcode_
 savedsl(p, "build/negative_autoregulation.dslb");
 r = system ${dsl_cli(p)} --dsl build/negative_autoregulation.dslb;
 assert(r.code == 0);
@@ -44,7 +44,7 @@ for (line in split(r.stdout, "\n")) {
 write_file("build/examples/negative_autoregulation_speedup.csv", csv);
 
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/negative_autoregulation.png", 960, 540);
 plot.cmd("set datafile separator ','");
 plot.cmd("set multiplot layout 1,2 title 'Negative autoregulation: a gene that represses itself responds faster' font ',14'");
@@ -65,7 +65,7 @@ plot.cmd("set key bottom right Right noreverse samplen 2");
 plot.cmd("plot 15.573 with lines lw 2 dt 2 lc rgb '#df6b38' title 'Limit 3 ln2 / ln(8/7) = 15.6', 'build/examples/negative_autoregulation_speedup.csv' using 1:2 with linespoints lw 3 pt 7 ps 1.5 lc rgb '#007f86' title 'CVODE'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v, "build/negative_autoregulation-plot.dslb");
 r = system ${dsl_cli(v)} --dsl build/negative_autoregulation-plot.dslb;
 assert(r.code == 0);

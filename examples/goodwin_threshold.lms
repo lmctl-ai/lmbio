@@ -4,7 +4,7 @@
 # logarithmic gain n z^n/(1 + z^n) at the steady state exceeds 8. This what-if sweep finds that
 # threshold from the formula and checks it against simulated amplitudes.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("goodwin").compartment("cell", 1.0).species("x", "cell", 0.1).species("y", "cell", 0.2).species("z", "cell", 0.3).param("a", 10.0).param("n", 10.0);
 m.reaction("transcribe", " -> x", "a/(1 + z^n)").reaction("x_decay", "x ->", "x");
 m.reaction("translate", " -> y", "x").reaction("y_decay", "y ->", "y");
@@ -38,7 +38,7 @@ for (j in range(0, 41)) {
 }
 bio.assert_true(threshold > 8.0);
 bio.print("threshold," + str(threshold));
-end _dsl_
+end _lmcode_
 savedsl(p, "build/goodwin_threshold.dslb");
 r = system ${dsl_cli(p)} --dsl build/goodwin_threshold.dslb;
 assert(r.code == 0);
@@ -57,7 +57,7 @@ for (row in csv_parse(csv)) {
 nc = str(round(threshold * 100) / 100);
 
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/goodwin_threshold.png", 960, 540);
 plot.cmd("set datafile separator ','");
 plot.cmd(${"set multiplot layout 1,2 title 'Goodwin oscillator: the loop starts ticking at Hill steepness n = " + nc + "' font ',14'"});
@@ -76,7 +76,7 @@ plot.cmd("set key top left Left reverse samplen 2");
 plot.cmd("plot 'build/examples/goodwin_threshold_sweep.csv' using 1:2 with linespoints lw 3 pt 7 ps 1.2 lc rgb '#007f86' title 'simulated (t = 500-600)'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v, "build/goodwin_threshold-plot.dslb");
 r = system ${dsl_cli(v)} --dsl build/goodwin_threshold-plot.dslb;
 assert(r.code == 0);

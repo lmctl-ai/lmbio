@@ -1,7 +1,7 @@
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("mass_action_mm").compartment("cell", 1.0).species("S", "cell", 10.0).species("E", "cell", 1.0).species("ES", "cell", 0.0).species("P", "cell", 0.0).param("kf", 2.0).param("kr", 1.0).param("kc", 0.5).reaction("bind", "S + E -> ES", "kf*S*E").reversible("bind", "kr*ES").reaction("cat", "ES -> E + P", "kc*ES");
 let r = m.simulate(0.0, 20.0, 101);
 bio.assert_close(r.final("S") + r.final("ES") + r.final("P"), 10.0, 0.001);
 bio.assert_close(r.final("E") + r.final("ES"), 1.0, 0.001);
-end _dsl_
+end _lmcode_
 savedsl(p, "build/michaelis_menten.dslb");

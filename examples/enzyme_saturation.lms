@@ -2,7 +2,7 @@
 # at nine substrate levels and recover the Michaelis-Menten law v = Vmax S / (Km + S)
 # with Km = (koff + kcat)/kon = 1 and Vmax = kcat E0 = 0.05, without assuming it.
 mkdir("build/examples");
-p = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+p = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("enzyme").compartment("cell", 1.0).species("E", "cell", 0.01).species("S", "cell", 1.0).species("ES", "cell", 0.0).species("P", "cell", 0.0);
 m.param("kon", 10.0).param("koff", 5.0).param("kcat", 5.0);
 m.reaction("bind", "E + S -> ES", "kon*E*S").reversible("bind", "koff*ES").reaction("turnover", "ES -> E + P", "kcat*ES");
@@ -20,7 +20,7 @@ for (i in range(0, 9)) {
     course.save_csv("build/examples/enzyme_saturation_" + str(i) + ".csv");
   }
 }
-end _dsl_
+end _lmcode_
 savedsl(p, "build/enzyme_saturation.dslb");
 r = system ${dsl_cli(p)} --dsl build/enzyme_saturation.dslb;
 assert(r.code == 0);
@@ -31,7 +31,7 @@ for (line in split(r.stdout, "\n")) {
 write_file("build/examples/enzyme_saturation_rates.csv", csv);
 
 mkdir("images");
-v = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+v = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/enzyme_saturation.png", 960, 540);
 plot.cmd("set datafile separator ','");
 plot.cmd("set multiplot layout 1,2 title 'Enzyme saturation: the full mechanism reproduces Michaelis-Menten' font ',14'");
@@ -54,7 +54,7 @@ plot.cmd("set label 2 'Vmax = 0.05' at 0.13,0.0525 tc rgb '#555555'");
 plot.cmd("plot 0.05*x/(1+x) with lines lw 3 lc rgb '#df6b38' title 'Michaelis-Menten law', 'build/examples/enzyme_saturation_rates.csv' using 1:2 with points pt 7 ps 2 lc rgb '#007f86' title 'Full mechanism (CVODE)'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(v, "build/enzyme_saturation-plot.dslb");
 r = system ${dsl_cli(v)} --dsl build/enzyme_saturation-plot.dslb;
 assert(r.code == 0);
