@@ -12,13 +12,13 @@ Gene circuits, enzymes, drugs, epidemics and molecular noise as reaction network
 | --- | --- | --- |
 | ![Toggle switch phase portrait next to its circuit](docs/images/toggle_switch.png) | ![Repressilator ring and protein oscillations](docs/images/repressilator.png) | ![Negative autoregulation response times](docs/images/negative_autoregulation.png) |
 | Two repressors shut each other off; 22 starts settle into one of two stable states, split by a saddle at exactly (2, 2). | lacI, tetR and cI repress each other in a ring and oscillate with a period of 8.7 mRNA lifetimes; with Hill n = 1 the ring goes quiet. [Animation](docs/images/repressilator.gif) | A gene that represses itself reaches half its level up to 15.6x sooner than a simply regulated one; the limit is checked in closed form. |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/toggle_switch.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/repressilator.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/negative_autoregulation.lms` |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/toggle_switch.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/repressilator.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/negative_autoregulation.lms` |
 
 | When a feedback loop starts to tick | Same mean, very different cells | One cell, one seeded trajectory |
 | --- | --- | --- |
 | ![Goodwin oscillator amplitude vs Hill steepness](docs/images/goodwin_threshold.png) | ![Poisson and bursty protein distributions](docs/images/gene_noise.png) | ![A single Gillespie trajectory](docs/images/stochastic.png) |
 | The Goodwin loop oscillates once its gain passes 8 (the secant condition), at n = 9.13; a 41-point sweep shows the onset. | Direct production gives Poisson noise (Fano 1); bursty production from mRNA gives Fano 5.5 at the same mean. | Immigration and loss at low copy number: integer jumps around a mean of 3, reproducible from the seed. |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/goodwin_threshold.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/gene_noise.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/stochastic.lms` |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/goodwin_threshold.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/gene_noise.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/stochastic.lms` |
 
 ### Enzymes, metabolism and chemistry
 
@@ -26,13 +26,13 @@ Gene circuits, enzymes, drugs, epidemics and molecular noise as reaction network
 | --- | --- | --- |
 | ![Michaelis-Menten curve recovered from the full mechanism](docs/images/enzyme_saturation.png) | ![Two flux maps with arrow width proportional to flux](docs/images/feedback_inhibition.png) | ![Scaled parameter sensitivities over time](docs/images/parameter_sensitivity.png) |
 | The full E + S <-> ES -> E + P mechanism at nine substrate levels lands on Vmax S/(Km + S) with Km = 1 within 3%. | When the end product is no longer used it shuts its own supply: flux falls 2.8x, matching a closed-form quadratic. | Scaled sensitivities of the product to kcat, kon and koff start at 0.75, 0.5 and -0.25 and fade once substrate runs out. |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/enzyme_saturation.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/feedback_inhibition.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/parameter_sensitivity.lms` |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/enzyme_saturation.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/feedback_inhibition.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/parameter_sensitivity.lms` |
 
 | Robertson: stiff chemistry | Enzyme turns substrate into product | A cascade delays its product |
 | --- | --- | --- |
 | ![Robertson kinetics on a log time axis](docs/images/robertson_switch.png) | ![Enzyme time course](docs/images/biochemical_network.png) | ![Sequential conversion A to B to C](docs/images/cascade_delay.png) |
 | Rate constants spanning nine orders of magnitude, integrated from 1e-6 to 1e5; checked against A(40) = 0.715827. | Substrate, complex and product of one mass-action enzyme with mass conservation checked. | A -> B -> C: the intermediate peaks at 1/e before the product takes over. |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/robertson_switch.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/biochemical_network.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/cascade_delay.lms` |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/robertson_switch.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/biochemical_network.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/cascade_delay.lms` |
 
 ### Medicine, epidemics and populations
 
@@ -40,13 +40,13 @@ Gene circuits, enzymes, drugs, epidemics and molecular noise as reaction network
 | --- | --- | --- |
 | ![Two dosing regimens against a therapeutic window](docs/images/pk_dosing.png) | ![SIR outbreaks and the final-size law](docs/images/sir_epidemic.png) | ![Lotka-Volterra cycles](docs/images/predator_prey.png) |
 | 400 mg twice daily vs 800 mg once daily: same average level 7.2 mg/L, but only one regimen stays inside the 3-12 mg/L window. | SIR outbreaks for eight R0 values land on z = 1 - exp(-R0 z) and always overshoot herd immunity 1 - 1/R0. | Lotka-Volterra written as three reactions: predators follow prey around a closed cycle. |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/pk_dosing.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/sir_epidemic.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/predator_prey.lms` |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/pk_dosing.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/sir_epidemic.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/predator_prey.lms` |
 
 | Crowding limits growth | Reversible chemistry finds equilibrium | Half-life as a molecular clock |
 | --- | --- | --- |
 | ![Logistic growth](docs/images/logistic_limit.png) | ![Reversible reaction approaching equilibrium](docs/images/reversible_balance.png) | ![First-order decay against the exact exponential](docs/images/decay_clock.png) |
 | Logistic growth as birth and crowding reactions settles at the carrying capacity of 100. | A <-> B with forward rate twice the reverse ends with B = 2/3 of the pool. | First-order decay matches exp(-0.7 t); the [animation](docs/images/decay_clock.gif) sweeps a time cursor. |
-| `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/logistic_limit.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/reversible_balance.lms` | `lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/decay_clock.lms` |
+| `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/logistic_limit.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/reversible_balance.lms` | `lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/decay_clock.lms` |
 
 Every example checks its own numbers against a known answer (a closed form, a textbook threshold, a conservation law) before it draws anything; a wrong result stops the run.
 
@@ -55,7 +55,7 @@ Every example checks its own numbers against a known answer (a closed form, a te
 ```sh
 npm install -g @lmctl-ai/lmctl
 mkdir try-lmbio && cd try-lmbio
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/toggle_switch.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/toggle_switch.lms
 ```
 
 The run downloads the lmbio, lmplot and lmdraw release binaries on first use (Linux binaries require dynamic glibc >= 2.35, Ubuntu 22.04+), computes, checks, and prints `wrote images/toggle_switch.png`. Intermediate CSV files land in `build/examples/`. The animated examples also write a GIF when `ffmpeg` is on PATH (otherwise they print `SKIP` and keep the frames in `build/`).

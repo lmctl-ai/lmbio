@@ -4,7 +4,7 @@ import pathlib,re,struct,sys
 r=pathlib.Path(__file__).resolve().parent.parent
 s=(r/'README.md').read_text()
 prefix="https://raw.githubusercontent.com/lmctl-ai/"+r.name+"/main/examples/"
-urls=re.findall(r'lmctl autorun (https://raw\.githubusercontent\.com/[^\s`|<>]+\.lms)',s)
+urls=re.findall(r'lmctl(?: autorun)? (https://raw\.githubusercontent\.com/[^\s`|<>]+\.lms)',s)
 assert len(set(urls))>=12, "Every gallery card and example listing needs an autorun command"
 assert not re.search(r'\]\(examples/[^)]+\.lms\)',s), "Use autorun commands instead of relative source links"
 for url in urls:
