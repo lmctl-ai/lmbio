@@ -233,6 +233,7 @@ else
 fi
 
 python3 scripts/check-gallery.py --generated
+python3 scripts/test-gallery-paths.py || fail "gallery path controls"
 ok "gallery links, image signatures, dimensions and byte budgets"
 
 echo "all $pass checks passed"
