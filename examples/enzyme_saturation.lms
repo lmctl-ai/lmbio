@@ -22,7 +22,7 @@ for (i in range(0, 9)) {
 }
 end _lmcode_
 savedsl(p, "build/enzyme_saturation.dslb");
-r = system ${dsl_cli(p)} --dsl build/enzyme_saturation.dslb;
+r = system ${dsl_cli(p)} --lmcode build/enzyme_saturation.dslb;
 assert(r.code == 0);
 csv = "S0,v0\n";
 for (line in split(r.stdout, "\n")) {
@@ -56,6 +56,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(v, "build/enzyme_saturation-plot.dslb");
-r = system ${dsl_cli(v)} --dsl build/enzyme_saturation-plot.dslb;
+r = system ${dsl_cli(v)} --lmcode build/enzyme_saturation-plot.dslb;
 assert(r.code == 0);
 println("wrote images/enzyme_saturation.png");

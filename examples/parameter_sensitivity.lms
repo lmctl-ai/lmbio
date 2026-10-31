@@ -28,7 +28,7 @@ for (i in range(1, 3001)) {
 }
 end _lmcode_
 savedsl(p, "build/parameter_sensitivity.dslb");
-r = system ${dsl_cli(p)} --dsl build/parameter_sensitivity.dslb;
+r = system ${dsl_cli(p)} --lmcode build/parameter_sensitivity.dslb;
 assert(r.code == 0);
 csv = "time,P,kcat,kon,koff\n";
 for (line in split(r.stdout, "\n")) {
@@ -57,6 +57,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(v, "build/parameter_sensitivity-plot.dslb");
-r = system ${dsl_cli(v)} --dsl build/parameter_sensitivity-plot.dslb;
+r = system ${dsl_cli(v)} --lmcode build/parameter_sensitivity-plot.dslb;
 assert(r.code == 0);
 println("wrote images/parameter_sensitivity.png");

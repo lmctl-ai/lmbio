@@ -47,7 +47,7 @@ bio.assert_close(bfano, 1.0 + 5.0 * 1.0 / 1.1, 0.6);
 bio.print("stats," + str(mean) + "," + str(fano) + "," + str(bmean) + "," + str(bfano));
 end _lmcode_
 savedsl(p, "build/gene_noise.dslb");
-r = system ${dsl_cli(p)} --dsl build/gene_noise.dslb;
+r = system ${dsl_cli(p)} --lmcode build/gene_noise.dslb;
 assert(r.code == 0);
 fd = "";
 fb = "";
@@ -85,6 +85,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(v, "build/gene_noise-plot.dslb");
-r = system ${dsl_cli(v)} --dsl build/gene_noise-plot.dslb;
+r = system ${dsl_cli(v)} --lmcode build/gene_noise-plot.dslb;
 assert(r.code == 0);
 println("wrote images/gene_noise.png");

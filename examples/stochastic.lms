@@ -6,7 +6,7 @@ bio.assert_true(r.final("X") >= 0.0);
 r.save_csv("build/examples/stochastic.csv");
 end _lmcode_
 savedsl(p, "build/stochastic.dslb");
-r = system ${dsl_cli(p)} --dsl build/stochastic.dslb;
+r = system ${dsl_cli(p)} --lmcode build/stochastic.dslb;
 if (r.code!=0) { println(r.stdout); println(r.stderr); }
 assert(r.code==0);
 
@@ -30,7 +30,7 @@ plot.cmd("plot 'build/examples/stochastic.csv' using 1:2 with steps ls 1 title '
 plot.close();
 end _lmcode_
 savedsl(v,"build/visual/stochastic.dslb");
-r = system ${dsl_cli(v)} --dsl build/visual/stochastic.dslb;
+r = system ${dsl_cli(v)} --lmcode build/visual/stochastic.dslb;
 assert(r.code==0);
 
 println("wrote images/stochastic.png");

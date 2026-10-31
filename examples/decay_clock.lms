@@ -4,7 +4,7 @@ let m=bio.model("decay").compartment("v",1.0).species("A","v",1.0).param("k",0.7
 let r=m.simulate(0.0,6.0,121);bio.assert_close(r.final("A"),0.01499557682,0.00001);r.save_csv("build/examples/decay_clock.csv");
 end _lmcode_
 savedsl(p, "build/decay_clock.dslb");
-r = system ${dsl_cli(p)} --dsl build/decay_clock.dslb;
+r = system ${dsl_cli(p)} --lmcode build/decay_clock.dslb;
 assert(r.code == 0);
 
 mkdir("build/visual");
@@ -34,7 +34,7 @@ plot.close();
 }
 end _lmcode_
 savedsl(v,"build/visual/decay_clock.dslb");
-r = system ${dsl_cli(v)} --dsl build/visual/decay_clock.dslb;
+r = system ${dsl_cli(v)} --lmcode build/visual/decay_clock.dslb;
 assert(r.code==0);
 
 println("wrote images/decay_clock.png");

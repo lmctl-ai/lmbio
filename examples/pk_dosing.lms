@@ -49,7 +49,7 @@ for (regimen in range(0, 2)) {
 }
 end _lmcode_
 savedsl(p, "build/pk_dosing.dslb");
-r = system ${dsl_cli(p)} --dsl build/pk_dosing.dslb;
+r = system ${dsl_cli(p)} --lmcode build/pk_dosing.dslb;
 assert(r.code == 0);
 q12 = "";
 q24 = "";
@@ -82,6 +82,6 @@ plot.cmd(${"plot for [k=0:7] sprintf('build/examples/pk_dosing_q12_%d.csv', k) u
 plot.close();
 end _lmcode_
 savedsl(v, "build/pk_dosing-plot.dslb");
-r = system ${dsl_cli(v)} --dsl build/pk_dosing-plot.dslb;
+r = system ${dsl_cli(v)} --lmcode build/pk_dosing-plot.dslb;
 assert(r.code == 0);
 println("wrote images/pk_dosing.png");

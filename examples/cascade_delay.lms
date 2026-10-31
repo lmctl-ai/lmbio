@@ -4,7 +4,7 @@ let m=bio.model("cascade").compartment("v",1.0).species("A","v",1.0).species("B"
 let r=m.simulate(0.0,8.0,161);bio.assert_close(r.final("C"),0.99698084,0.00001);r.save_csv("build/examples/cascade_delay.csv");
 end _lmcode_
 savedsl(p, "build/cascade_delay.dslb");
-r = system ${dsl_cli(p)} --dsl build/cascade_delay.dslb;
+r = system ${dsl_cli(p)} --lmcode build/cascade_delay.dslb;
 assert(r.code == 0);
 
 mkdir("build/visual");
@@ -26,7 +26,7 @@ plot.cmd("plot 'build/examples/cascade_delay.csv' using 1:2 with lines ls 1 titl
 plot.close();
 end _lmcode_
 savedsl(v,"build/visual/cascade_delay.dslb");
-r = system ${dsl_cli(v)} --dsl build/visual/cascade_delay.dslb;
+r = system ${dsl_cli(v)} --lmcode build/visual/cascade_delay.dslb;
 assert(r.code==0);
 
 println("wrote images/cascade_delay.png");

@@ -4,7 +4,7 @@ let m=bio.model("ecology").compartment("v",1.0).species("prey","v",10.0).species
 let r=m.simulate(0.0,20.0,401);bio.assert_true(r.final("prey")>0.0);r.save_csv("build/examples/predator_prey.csv");
 end _lmcode_
 savedsl(p, "build/predator_prey.dslb");
-r = system ${dsl_cli(p)} --dsl build/predator_prey.dslb;
+r = system ${dsl_cli(p)} --lmcode build/predator_prey.dslb;
 assert(r.code == 0);
 
 mkdir("build/visual");
@@ -27,7 +27,7 @@ plot.cmd("plot 'build/examples/predator_prey.csv' using 1:2 with lines ls 1 titl
 plot.close();
 end _lmcode_
 savedsl(v,"build/visual/predator_prey.dslb");
-r = system ${dsl_cli(v)} --dsl build/visual/predator_prey.dslb;
+r = system ${dsl_cli(v)} --lmcode build/visual/predator_prey.dslb;
 assert(r.code==0);
 
 println("wrote images/predator_prey.png");

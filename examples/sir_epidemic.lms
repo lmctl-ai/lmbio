@@ -26,7 +26,7 @@ for (i in range(0, 8)) {
 }
 end _lmcode_
 savedsl(p, "build/sir_epidemic.dslb");
-r = system ${dsl_cli(p)} --dsl build/sir_epidemic.dslb;
+r = system ${dsl_cli(p)} --lmcode build/sir_epidemic.dslb;
 assert(r.code == 0);
 csv = "R0,attack,peak,peak_day\n";
 for (line in split(r.stdout, "\n")) {
@@ -56,6 +56,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(v, "build/sir_epidemic-plot.dslb");
-r = system ${dsl_cli(v)} --dsl build/sir_epidemic-plot.dslb;
+r = system ${dsl_cli(v)} --lmcode build/sir_epidemic-plot.dslb;
 assert(r.code == 0);
 println("wrote images/sir_epidemic.png");

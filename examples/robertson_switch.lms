@@ -23,7 +23,7 @@ bio.assert_close(peak, 0.0000365, 0.0000005);
 bio.assert_true(m.get("C") > 0.97);
 end _lmcode_
 savedsl(p, "build/robertson_switch.dslb");
-r = system ${dsl_cli(p)} --dsl build/robertson_switch.dslb;
+r = system ${dsl_cli(p)} --lmcode build/robertson_switch.dslb;
 assert(r.code == 0);
 
 mkdir("images");
@@ -41,6 +41,6 @@ plot.cmd("plot for [k=0:11] sprintf('build/examples/robertson_switch_%d.csv', k)
 plot.close();
 end _lmcode_
 savedsl(v, "build/robertson_switch-plot.dslb");
-r = system ${dsl_cli(v)} --dsl build/robertson_switch-plot.dslb;
+r = system ${dsl_cli(v)} --lmcode build/robertson_switch-plot.dslb;
 assert(r.code == 0);
 println("wrote images/robertson_switch.png");

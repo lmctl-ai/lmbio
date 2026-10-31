@@ -60,7 +60,7 @@ lmctl https://raw.githubusercontent.com/lmctl-ai/lmbio/main/examples/toggle_swit
 
 The run downloads the lmbio, lmplot and lmdraw release binaries on first use (Linux binaries require dynamic glibc >= 2.35, Ubuntu 22.04+), computes, checks, and prints `wrote images/toggle_switch.png`. Intermediate CSV files land in `build/examples/`. The animated examples also write a GIF when `ffmpeg` is on PATH (otherwise they print `SKIP` and keep the frames in `build/`).
 
-If an unrelated program called `lmbio` is already on your PATH, lmscript picks it first and stops with `unexpected argument '--dsl-schema'`. Remove it from PATH or put this host's directory first; the host must answer `lmbio --dsl-schema --json`.
+If an unrelated program called `lmbio` is already on your PATH, lmscript picks it first and stops with `unexpected argument '--lmcode-schema'`. Remove it from PATH or put this host's directory first; the host must answer `lmbio --lmcode-schema --json`.
 
 ## Write your own model
 
@@ -75,11 +75,11 @@ bio.assert_close(result.final("A") + result.final("B"), 1.0, 0.000001);
 result.save_csv("conversion.csv");
 end _lmcode_
 savedsl(p, "conversion.dslb");
-r = system ${dsl_cli(p)} --dsl conversion.dslb;
+r = system ${dsl_cli(p)} --lmcode conversion.dslb;
 assert(r.code == 0);
 ```
 
-Save it as `conversion.lms` and run `lmscript conversion.lms`. The host CLI accepts `--dsl FILE...`, `--dry-run --dsl FILE...`, `--version`, `--notices`, `--dsl-schema [--json]` and `--dsl-signatures`. Usage errors exit 2; bytecode load/run errors exit 3. Dry run checks bytecode without running the model or writing files.
+Save it as `conversion.lms` and run `lmscript conversion.lms`. The host CLI accepts `--lmcode FILE...`, `--dry-run --lmcode FILE...`, `--version`, `--notices`, `--lmcode-schema [--json]` and `--lmcode-signatures`. Usage errors exit 2; bytecode load/run errors exit 3. Dry run checks bytecode without running the model or writing files.
 
 | API | Purpose |
 | --- | --- |

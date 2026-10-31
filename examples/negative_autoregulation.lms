@@ -35,7 +35,7 @@ for (j in range(0, 13)) {
 }
 end _lmcode_
 savedsl(p, "build/negative_autoregulation.dslb");
-r = system ${dsl_cli(p)} --dsl build/negative_autoregulation.dslb;
+r = system ${dsl_cli(p)} --lmcode build/negative_autoregulation.dslb;
 assert(r.code == 0);
 csv = "strength,speedup\n";
 for (line in split(r.stdout, "\n")) {
@@ -67,6 +67,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(v, "build/negative_autoregulation-plot.dslb");
-r = system ${dsl_cli(v)} --dsl build/negative_autoregulation-plot.dslb;
+r = system ${dsl_cli(v)} --lmcode build/negative_autoregulation-plot.dslb;
 assert(r.code == 0);
 println("wrote images/negative_autoregulation.png");

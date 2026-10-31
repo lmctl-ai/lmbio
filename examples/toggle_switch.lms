@@ -41,7 +41,7 @@ for (k in range(0, 22)) {
 }
 end _lmcode_
 savedsl(p, "build/toggle_switch.dslb");
-r = system ${dsl_cli(p)} --dsl build/toggle_switch.dslb;
+r = system ${dsl_cli(p)} --lmcode build/toggle_switch.dslb;
 assert(r.code == 0);
 hi = 0.0;
 lo = 0.0;
@@ -151,7 +151,7 @@ scene.text(${F(sx + 12.0)}, ${F(sy - 10.0)}, 13.0, "saddle", "#1d2733");
 scene.render_png("build/rendered/toggle_switch.png", 960, 540, 1);
 end _lmcode_
 savedsl(d, "build/toggle_switch-draw.dslb");
-r = system ${dsl_cli(d)} --dsl build/toggle_switch-draw.dslb;
+r = system ${dsl_cli(d)} --lmcode build/toggle_switch-draw.dslb;
 assert(r.code == 0);
 copy_file("build/rendered/toggle_switch.png", "images/toggle_switch.png");
 println("wrote images/toggle_switch.png");

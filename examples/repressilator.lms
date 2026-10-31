@@ -52,7 +52,7 @@ bio.assert_true(spread < 0.01);
 bio.print("period," + str(period) + "," + str(first) + "," + str(top) + "," + str(flat.final("p1")));
 end _lmcode_
 savedsl(p, "build/repressilator.dslb");
-r = system ${dsl_cli(p)} --dsl build/repressilator.dslb;
+r = system ${dsl_cli(p)} --lmcode build/repressilator.dslb;
 assert(r.code == 0);
 period = 0.0;
 t_start = 0.0;
@@ -179,7 +179,7 @@ scene.circle(${F(PX(t))}, ${F(PY(v3))}, 6.0, "#5864a8");
 scene.render_png(${out}, 960, 540, 1);
 end _lmcode_
   savedsl(d, "build/repressilator-draw.dslb");
-  r = system ${dsl_cli(d)} --dsl build/repressilator-draw.dslb;
+  r = system ${dsl_cli(d)} --lmcode build/repressilator-draw.dslb;
   assert(r.code == 0);
 }
 copy_file("build/rendered/repressilator-frame-0.png", "images/repressilator.png");

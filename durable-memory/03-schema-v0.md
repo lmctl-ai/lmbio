@@ -14,7 +14,7 @@ Supported MathML includes cn (real/integer/e-notation/rational), ci, time csymbo
 
 save_sbml writes L3V2 with precision-17 values, valid mathematical operators and flags, scoped local parameters and collision-free reverse reaction IDs. Reversible builder rates become separate irreversible reaction elements with equivalent net dynamics. Exported rule-target parameters are marked nonconstant. XML is escaped by pugixml.
 
-Result matrices contain time, species in creation order and parameters in sorted identifier order. rows()/cols()/get()/column() expose matrix access; value(id,row)/final(id)/max(id)/time_of_max(id) provide named access. CSV includes a header and 17-digit values. Rows are zero-based. The host supports only standard queries and --dsl; --dry-run validates bytecode without execution. Usage exits 2; load/run errors exit 3 with SDK source diagnostics.
+Result matrices contain time, species in creation order and parameters in sorted identifier order. rows()/cols()/get()/column() expose matrix access; value(id,row)/final(id)/max(id)/time_of_max(id) provide named access. CSV includes a header and 17-digit values. Rows are zero-based. The host supports only standard queries and --lmcode; --dry-run validates bytecode without execution. Usage exits 2; load/run errors exit 3 with SDK source diagnostics.
 
 ## Additions in 0.1.1
 

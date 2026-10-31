@@ -40,7 +40,7 @@ bio.assert_true(threshold > 8.0);
 bio.print("threshold," + str(threshold));
 end _lmcode_
 savedsl(p, "build/goodwin_threshold.dslb");
-r = system ${dsl_cli(p)} --dsl build/goodwin_threshold.dslb;
+r = system ${dsl_cli(p)} --lmcode build/goodwin_threshold.dslb;
 assert(r.code == 0);
 csv = "n,amplitude,gain\n";
 threshold = 0.0;
@@ -78,6 +78,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(v, "build/goodwin_threshold-plot.dslb");
-r = system ${dsl_cli(v)} --dsl build/goodwin_threshold-plot.dslb;
+r = system ${dsl_cli(v)} --lmcode build/goodwin_threshold-plot.dslb;
 assert(r.code == 0);
 println("wrote images/goodwin_threshold.png");

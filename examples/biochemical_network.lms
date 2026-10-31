@@ -6,7 +6,7 @@ bio.assert_close(r.final("S") + r.final("ES") + r.final("P"), 10.0, 0.001);
 r.save_csv("build/examples/biochemical_network.csv");
 end _lmcode_
 savedsl(p, "build/biochemical_network.dslb");
-r = system ${dsl_cli(p)} --dsl build/biochemical_network.dslb;
+r = system ${dsl_cli(p)} --lmcode build/biochemical_network.dslb;
 if (r.code!=0) { println(r.stdout); println(r.stderr); }
 assert(r.code==0);
 
@@ -29,7 +29,7 @@ plot.cmd("plot 'build/examples/biochemical_network.csv' using 1:2 with lines ls 
 plot.close();
 end _lmcode_
 savedsl(v,"build/visual/biochemical_network.dslb");
-r = system ${dsl_cli(v)} --dsl build/visual/biochemical_network.dslb;
+r = system ${dsl_cli(v)} --lmcode build/visual/biochemical_network.dslb;
 assert(r.code==0);
 
 println("wrote images/biochemical_network.png");

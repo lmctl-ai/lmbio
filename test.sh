@@ -30,6 +30,7 @@ if [ ! -f "$BUILD_DIR/CMakeCache.txt" ] && command -v ninja >/dev/null 2>&1; the
 cmake -S . -B "$BUILD_DIR" $GEN -DCMAKE_BUILD_TYPE=Release >/dev/null
 cmake --build "$BUILD_DIR" --parallel "${BUILD_JOBS:-4}" >"$WORK/build.log" 2>&1 || { tail -40 "$WORK/build.log" >&2; fail "build"; }
 ok "build"
+python3 tests/check-host-flags.py schema/lmbio.dsl.json "$HOST" || fail "hard host flag cutover"
 ctest --test-dir "$BUILD_DIR" --output-on-failure || fail "native biochemical tests"
 ok "native biochemical regression tests"
 want_version="lmbio $(sed -n 's/^project(lmbio VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
@@ -39,25 +40,25 @@ cp schema/lmbio.dsl.json "$WORK/schema.committed"
 python3 scripts/gen-schema.py >/dev/null || fail "scripts/gen-schema.py"
 cmp -s "$WORK/schema.committed" schema/lmbio.dsl.json || fail "schema/lmbio.dsl.json is stale: run scripts/gen-schema.py"
 ok "schema matches the registrations in cpp/main.cpp"
-"$HOST" --dsl-schema --json >"$WORK/schema.json" || fail "embedded schema print"
+"$HOST" --lmcode-schema --json >"$WORK/schema.json" || fail "embedded schema print"
 cmp -s "$WORK/schema.json" schema/lmbio.dsl.json || fail "embedded schema differs from schema/lmbio.dsl.json"
-ok "--dsl-schema --json prints byte-identical embedded schema bytes"
-diff -u <("$LMSCRIPT" --dsl-signatures schema/lmbio.dsl.json) <("$HOST" --dsl-signatures) || fail "host/compiler signatures differ"
+ok "--lmcode-schema --json prints byte-identical embedded schema bytes"
+diff -u <("$LMSCRIPT" --lmcode-signatures schema/lmbio.dsl.json) <("$HOST" --lmcode-signatures) || fail "host/compiler signatures differ"
 ok "host registry matches compiler signatures"
 python3 scripts/merge-std.py --host-only schema/lmbio.dsl.json "$WORK/host-only-schema.json"
 cmp schema/lmbio.dsl.json "$WORK/host-only-schema.json" || fail "host schema declares standard members"
-"$HOST" --dsl-signatures >"$WORK/registry-signatures.txt"
-"$LMSCRIPT" --dsl-signatures cpp/std/lmcode-std.schema.json >"$WORK/standard-signatures.txt"
+"$HOST" --lmcode-signatures >"$WORK/registry-signatures.txt"
+"$LMSCRIPT" --lmcode-signatures cpp/std/lmcode-std.schema.json >"$WORK/standard-signatures.txt"
 python3 - "$WORK" <<'PYHOST'
 from pathlib import Path
 import sys
 work=Path(sys.argv[1])
 registry=set((work/'registry-signatures.txt').read_text().splitlines())
 standard=set((work/'standard-signatures.txt').read_text().splitlines())
-assert len(standard)==72, len(standard)
+assert len(standard)==206, len(standard)
 (work/'host-signatures.txt').write_bytes(''.join(line+'\n' for line in sorted(registry-standard)).encode('utf-8'))
 PYHOST
-diff -u <("$LMSCRIPT" --dsl-signatures schema/lmbio.dsl.json --without-std) "$WORK/host-signatures.txt" || fail "host-only registry/compiler signatures differ"
+diff -u <("$LMSCRIPT" --lmcode-signatures schema/lmbio.dsl.json --without-std) "$WORK/host-signatures.txt" || fail "host-only registry/compiler signatures differ"
 ok "host-only schema and implicit standard registry surfaces agree"
 "$HOST" --notices >"$WORK/notices.txt" || fail "--notices"
 cmp -s "$WORK/notices.txt" THIRD_PARTY_NOTICES || fail "--notices differs from THIRD_PARTY_NOTICES"
@@ -98,7 +99,7 @@ done
 ok "$n programs compile as bytecode v5"
 for src in tests/*.lms examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$HOST" --dsl "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
+  "$HOST" --lmcode "build/$name.dslb" >"$WORK/$name.out" 2>"$WORK/$name.err" || { cat "$WORK/$name.out" "$WORK/$name.err" >&2; fail "$name run"; }
   grep -q '"ok": true' "$WORK/$name.out" || { cat "$WORK/$name.out" >&2; fail "$name did not report ok"; }
 done
 ok "$n programs run and pass their own assertions"
@@ -107,7 +108,7 @@ ok "$n programs run and pass their own assertions"
 for f in build/examples/*.csv; do echo "$(sha "$f") $f"; done >"$WORK/before.txt"
 for src in examples/*.lms; do
   name="$(basename "$src" .lms)"
-  "$HOST" --dsl "build/$name.dslb" >/dev/null 2>&1 || fail "$name rerun"
+  "$HOST" --lmcode "build/$name.dslb" >/dev/null 2>&1 || fail "$name rerun"
 done
 for f in build/examples/*.csv; do echo "$(sha "$f") $f"; done >"$WORK/after.txt"
 cmp -s "$WORK/before.txt" "$WORK/after.txt" || fail "result files differ on rerun"
@@ -122,7 +123,7 @@ end _dsl_
 savedsl(p, "$WORK/$1.dslb");
 LMS
   "$LMSCRIPT" "$WORK/$1.lms" >/dev/null 2>"$WORK/$1.cerr" || { cat "$WORK/$1.cerr" >&2; fail "$1 compile"; }
-  set +e; out="$("$HOST" --dsl "$WORK/$1.dslb" 2>/dev/null)"; code=$?; set -e
+  set +e; out="$("$HOST" --lmcode "$WORK/$1.dslb" 2>/dev/null)"; code=$?; set -e
   [ "$code" = 3 ] || fail "$1: exit code $code, expected 3 ($out)"
   echo "$out" | grep -q "$3" || fail "$1: message lacks '$3': $out"
 }
@@ -149,12 +150,12 @@ ok "errors stop with exit 3 and clear messages (19 cases)"
 
 # Dry run loads/verifies bytecode without executing numerical work or writing CSV.
 rm -f build/examples/biochemical_network.csv
-"$HOST" --dry-run --dsl build/biochemical_network.dslb >"$WORK/dry.out" || fail "dry run"
+"$HOST" --dry-run --lmcode build/biochemical_network.dslb >"$WORK/dry.out" || fail "dry run"
 [ ! -e build/examples/biochemical_network.csv ] || fail "dry run created CSV"
-"$HOST" --dsl build/biochemical_network.dslb >/dev/null || fail "restore example CSV"
+"$HOST" --lmcode build/biochemical_network.dslb >/dev/null || fail "restore example CSV"
 ok "dry run verifies without writing outputs"
 
-for flags in '--unknown' '--version extra' '--dsl-schema --bogus' '--dry-run' '--dsl --bogus'; do
+for flags in '--unknown' '--version extra' '--lmcode-schema --bogus' '--dry-run' '--lmcode --bogus'; do
   set +e
   # Deliberate word splitting: each fixed test string is a CLI argument sequence.
   # shellcheck disable=SC2086
@@ -165,7 +166,7 @@ for flags in '--unknown' '--version extra' '--dsl-schema --bogus' '--dry-run' '-
 done
 ok "invalid CLI combinations use exit 2"
 
-set +e; "$HOST" --dsl "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
+set +e; "$HOST" --lmcode "$WORK/does-not-exist.dslb" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 3 ] || fail "missing bytecode exit code $code, expected 3"
 set +e; "$HOST" >/dev/null 2>&1; code=$?; set -e
 [ "$code" = 2 ] || fail "usage exit code $code, expected 2"
@@ -190,11 +191,11 @@ end _dsl_
 savedsl(p, "$WORK/runaway.dslb");
 LMS
 "$LMSCRIPT" "$WORK/runaway.lms" >/dev/null || fail "runaway.lms compile"
-set +e; out="$(LMBIO_MAX_MEMORY_MB=64 "$HOST" --dsl "$WORK/runaway.dslb" 2>"$WORK/runaway.err")"; code=$?; set -e
+set +e; out="$(LMBIO_MAX_MEMORY_MB=64 "$HOST" --lmcode "$WORK/runaway.dslb" 2>"$WORK/runaway.err")"; code=$?; set -e
 [ "$code" = 3 ] || fail "runaway loop under LMBIO_MAX_MEMORY_MB=64: exit $code, expected 3 ($out)"
 echo "$out" | grep -q "memory budget exceeded" || fail "runaway loop: JSON lacks the budget message: $out"
 grep -q "LMBIO_MAX_MEMORY_MB" "$WORK/runaway.err" || fail "runaway loop: no budget message on stderr"
-set +e; LMBIO_MAX_MEMORY_MB=-5 "$HOST" --dsl "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
+set +e; LMBIO_MAX_MEMORY_MB=-5 "$HOST" --lmcode "$WORK/runaway.dslb" >/dev/null 2>"$WORK/badenv.err"; code=$?; set -e
 [ "$code" = 2 ] && grep -q "positive whole number" "$WORK/badenv.err" || fail "bad LMBIO_MAX_MEMORY_MB: exit $code"
 # Memory taken outside operator new is counted too: SUNDIALS state is charged before CVODE is
 # created (2000 species: a 31 MiB dense Jacobian plus its saved copy) and pugixml allocates
@@ -210,7 +211,7 @@ end _dsl_
 savedsl(p, "$WORK/wide.dslb");
 LMS
 "$LMSCRIPT" "$WORK/wide.lms" >/dev/null || fail "wide.lms compile"
-set +e; out="$(LMBIO_MAX_MEMORY_MB=32 "$HOST" --dsl "$WORK/wide.dslb" 2>/dev/null)"; code=$?; set -e
+set +e; out="$(LMBIO_MAX_MEMORY_MB=32 "$HOST" --lmcode "$WORK/wide.dslb" 2>/dev/null)"; code=$?; set -e
 [ "$code" = 3 ] && echo "$out" | grep -q "memory budget exceeded" || fail "CVODE state over LMBIO_MAX_MEMORY_MB=32: exit $code ($out)"
 python3 -c 'import sys; open(sys.argv[1], "w").write("<?xml version=\"1.0\"?>\n<sbml><!-- " + "x" * (24 << 20) + " --></sbml>\n")' "$WORK/big.xml"
 cat >"$WORK/bigxml.lms" <<LMS
@@ -220,11 +221,11 @@ end _dsl_
 savedsl(p, "$WORK/bigxml.dslb");
 LMS
 "$LMSCRIPT" "$WORK/bigxml.lms" >/dev/null || fail "bigxml.lms compile"
-set +e; out="$(LMBIO_MAX_MEMORY_MB=16 "$HOST" --dsl "$WORK/bigxml.dslb" 2>/dev/null)"; code=$?; set -e
+set +e; out="$(LMBIO_MAX_MEMORY_MB=16 "$HOST" --lmcode "$WORK/bigxml.dslb" 2>/dev/null)"; code=$?; set -e
 [ "$code" = 3 ] && echo "$out" | grep -q "memory budget exceeded" || fail "24 MiB SBML over LMBIO_MAX_MEMORY_MB=16: exit $code ($out)"
 rm -f "$WORK/big.xml"
 if [ "$UNAME_S" = Linux ]; then
-  set +e; out="$(ulimit -v 6291456; "$HOST" --dsl "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
+  set +e; out="$(ulimit -v 6291456; "$HOST" --lmcode "$WORK/runaway.dslb" 2>/dev/null)"; code=$?; set -e
   [ "$code" = 3 ] && echo "$out" | grep -q "limit 4096 MiB" || fail "runaway loop with the default budget under ulimit -v 6 GiB: exit $code ($out)"
   ok "memory budget: runaway loop stops at 64 MiB and at the default 4096 MiB (under ulimit -v 6 GiB); CVODE state and SBML documents count"
 else
