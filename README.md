@@ -6,6 +6,8 @@ Gene circuits, enzymes, drugs, epidemics and molecular noise as reaction network
 [![Latest release](https://img.shields.io/github/v/release/lmctl-ai/lmbio?label=release)](https://github.com/lmctl-ai/lmbio/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+**Documentation:** [lmctl.com/tools/lmbio](https://www.lmctl.com/tools/lmbio/) · [skill](https://www.lmctl.com/tools/lmbio/skill.html) · [guide](https://www.lmctl.com/tools/lmbio/guide.html) · [reference](https://www.lmctl.com/tools/lmbio/reference.html)
+
 ### Gene circuits and noise
 
 | Toggle switch: two memories | Repressilator: a ring that keeps time | Self-repression speeds response |
