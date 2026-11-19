@@ -7,7 +7,7 @@
 // membudget::Exceeded (a std::bad_alloc) instead of reaching the operating system; the host turns
 // it into the usual run error (exit 3), and the first failure also prints one line on stderr.
 //
-// The limit is 4096 MiB unless the host's environment variable (LMNUM_MAX_MEMORY_MB, ...) gives
+// The limit is 4096 MiB on 64-bit hosts, 256 MiB on 32-bit hosts, unless the host's environment variable (LMNUM_MAX_MEMORY_MB, ...) gives
 // another positive number of MiB. No setrlimit: it is not portable to macOS static builds.
 #pragma once
 #include <cstddef>

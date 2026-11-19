@@ -22,7 +22,10 @@ namespace membudget {
 namespace {
 
 constexpr std::size_t kMiB = std::size_t(1) << 20;
-constexpr std::size_t kDefaultMiB = 4096;
+// This constant initializes g_limit before main/global allocations. 4096 MiB
+// wraps to zero on wasm32, so configuring the budget in main is too late.
+constexpr std::size_t kDefaultMiB = sizeof(std::size_t) == 4 ? 256 : 4096;
+static_assert(kDefaultMiB <= SIZE_MAX / kMiB, "initial budget must not wrap");
 constexpr std::size_t kReserve = 64 * kMiB;  // headroom granted once so the error can be reported
 
 std::atomic<std::int64_t> g_used{0};

@@ -242,7 +242,7 @@ const char *usage =
     "usage: lmbio --version | --notices | --lmcode-schema "
     "[--json] | --lmcode-signatures | [--dry-run] --lmcode FILE [FILE ...]\n"
     "environment: LMBIO_MAX_MEMORY_MB  total memory budget in MiB (default "
-    "4096); a program that needs more\n"
+    "4096 on 64-bit, 256 on 32-bit); a program that needs more\n"
     "             stops with a run error (exit 3) instead of allocating\n";
 } // namespace
 

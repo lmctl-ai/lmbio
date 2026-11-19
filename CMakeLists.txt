@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(lmbio VERSION 0.1.3 LANGUAGES C CXX)
+if(EMSCRIPTEN)
+  add_compile_options(-fexceptions)
+endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -77,4 +80,23 @@ if(BUILD_TESTING)
       set_tests_properties(${test} PROPERTIES WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
     endif()
   endforeach()
+endif()
+
+# An opt-in bounded scientific Worker, independent of the private DSL compiler.
+if(EMSCRIPTEN)
+  add_executable(bio_worker cpp/browser.cpp)
+  target_link_libraries(bio_worker PRIVATE bio_core)
+  set_target_properties(bio_worker PROPERTIES SUFFIX ".mjs")
+  target_link_options(bio_worker PRIVATE --no-entry
+    -sMODULARIZE=1 -sEXPORT_ES6=1 -sENVIRONMENT=web,worker,node
+    -sFILESYSTEM=0 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=33554432
+    -sMAXIMUM_MEMORY=536870912 -sSTACK_SIZE=1048576 -sDISABLE_EXCEPTION_CATCHING=0
+    "-sEXPORTED_FUNCTIONS=['_bio_run','_bio_output','_bio_error','_bio_width','_bio_limit']"
+    "-sEXPORTED_RUNTIME_METHODS=['UTF8ToString','HEAPF64']")
+endif()
+if(BUILD_TESTING)
+  add_executable(browser_tests tests/browser.cpp cpp/browser.cpp)
+  target_link_libraries(browser_tests PRIVATE bio_core)
+  target_compile_options(browser_tests PRIVATE -UNDEBUG)
+  add_test(NAME browser COMMAND browser_tests)
 endif()
